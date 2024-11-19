@@ -1,12 +1,11 @@
 <template>
+    <div class="header">
+        <button @click="goToLogin" class="nav-btn">Déconnexion</button>
+        <h2 class="page-title">Accueil</h2>
+        <button @click="goToAbonnement" class="nav-btn">Page d'Abonnement</button>
+    </div>
     <div class="home-container">
-        <h1>Accueil</h1>
 
-        <!-- Boutons de navigation -->
-        <div class="navigation-buttons">
-            <button @click="goToLogin" class="nav-btn">Deconnection</button>
-            <button @click="goToAbonnement" class="nav-btn">Page d'Abonnement</button>
-        </div>
 
         <!-- Bouton Refresh -->
         <button @click="refreshData" class="refresh-btn">Refresh</button>
@@ -67,6 +66,11 @@ export default {
                     "2024-11-18": 5,
                     "2024-11-19": 10,
                     "2024-11-20": 12
+                },
+                sensor3: {
+                    "2024-11-18": 25,
+                    "2024-11-19": 14,
+                    "2024-11-20": 31.5
                 }
             };
 
@@ -181,13 +185,23 @@ export default {
     text-align: center;
 }
 
+.header {
+    display: flex;
+    justify-content: space-between;
+    background-color: #f8f9fa;
+    padding: 1.4em;
+    border-bottom: 3px solid #ddd;
+    margin-bottom: 1.4em;
+    box-sizing: border-box;
+}
+
 .refresh-btn {
     background-color: #4CAF50;
     color: white;
-    padding: 10px 20px;
+    padding: 15px 25px;
     margin: 10px 0;
     border: none;
-    border-radius: 5px;
+    border-radius: 10px;
     cursor: pointer;
 }
 
@@ -195,18 +209,15 @@ export default {
     background-color: #45a049;
 }
 
-.navigation-buttons {
-    margin-bottom: 20px;
-}
-
 .nav-btn {
-    background-color: #007BFF;
-    color: white;
-    padding: 10px 20px;
-    margin: 5px;
+    padding: 0.7em 1.4em;
+    font-size: 1.05rem;
     border: none;
-    border-radius: 5px;
+    background-color: #007bff;
+    color: white;
+    border-radius: 7px;
     cursor: pointer;
+    transition: background-color 0.3s ease;
 }
 
 .nav-btn:hover {
@@ -227,13 +238,11 @@ export default {
     margin-bottom: 20px;
 }
 
-h1 {
-    font-size: 2em;
-    margin-bottom: 20px;
-}
-
-h2 {
-    font-size: 1.2em;
-    margin-bottom: 10px;
+/* Titre centré dans le bandeau */
+.page-title {
+    font-size: 2.1rem;
+    font-weight: bold;
+    color: #333;
+    margin: 0;
 }
 </style>

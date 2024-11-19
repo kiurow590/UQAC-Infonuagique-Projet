@@ -132,6 +132,7 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
+    margin-top: 100px;
     width: 100%;
     height: 100%;
     padding: 2em;
@@ -209,6 +210,7 @@ button:hover {
     background-color: #218838;
 }
 
+.login-form,
 .signup-form {
     background-color: #f9f9f9;
 }
