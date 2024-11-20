@@ -106,9 +106,6 @@ export default {
             }
             */
 
-            // Simuler une mise à jour
-            console.log("Refreshing data...");
-            this.sensorData["Capteur de température"]["2024-11-18T13:00:00"] = 23.2;
             this.renderCharts();
         },
         renderCharts() {
