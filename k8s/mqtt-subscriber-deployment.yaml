@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mqtt-subscriber
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mqtt-subscriber
+  template:
+    metadata:
+      labels:
+        app: mqtt-subscriber
+    spec:
+      containers:
+        - name: mqtt-subscriber
+          image: kiurow590/mqtt-subscriber-js
+          env:
+            - name: BROKER_IP
+              value: "192.168.49.2" # Changez avec l'IP du broker
+            - name: BROKER_PORT
+              value: "30083"
+            - name: DB_HOST
+              value: "192.168.49.2"
+            - name: DB_PORT
+              value: "30036"
+            - name: DB_USER
+              value: "mqttuser"
+            - name: DB_PASSWORD
+              value: "mqttpass"
+            - name: DB_NAME
+              value: "mqtt_db"
