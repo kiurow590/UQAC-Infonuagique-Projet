@@ -22,17 +22,48 @@ const connectToDatabase = async () => {
         const connection = await mysql.createConnection(dbConfig);
         console.log('Connecté à la base de données MySQL.');
 
-        // Création de la table si elle n'existe pas
-        const createTableQuery = `
+        // Création de la table users
+        await connection.query(`
+            CREATE TABLE IF NOT EXISTS users (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                email VARCHAR(255) UNIQUE NOT NULL,
+                password VARCHAR(255) NOT NULL
+            );
+            `);
+        console.log('Table `users` prête.');
+
+        // Création de la table topics
+        await connection.query(`
+            CREATE TABLE IF NOT EXISTS topics (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                name VARCHAR(255) NOT NULL
+            );
+            `);
+        console.log('Table `topics` prête.');
+
+        // Création de la table messages
+        await connection.query(`
             CREATE TABLE IF NOT EXISTS messages (
                 id INT AUTO_INCREMENT PRIMARY KEY,
-                topic VARCHAR(255) NOT NULL,
-                payload TEXT NOT NULL,
-                timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                message JSON NOT NULL,
+                timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                topic_id INT NOT NULL,
+                FOREIGN KEY (topic_id) REFERENCES topics(id) ON DELETE CASCADE
             );
-        `;
-        await connection.query(createTableQuery);
+            `);
         console.log('Table `messages` prête.');
+
+        // Création de la table subscriptions
+        await connection.query(`
+            CREATE TABLE IF NOT EXISTS subscriptions (
+                user_id INT NOT NULL,
+                topic_id INT NOT NULL,
+                PRIMARY KEY (user_id, topic_id),
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+                FOREIGN KEY (topic_id) REFERENCES topics(id) ON DELETE CASCADE
+            );
+            `);
+        console.log('Table `subscriptions` prête.');
 
         return connection;
     } catch (err) {
@@ -60,20 +91,43 @@ const connectToMQTT = (connection) => {
         const payload = message.toString();
         console.log(`Message reçu sur ${topic}: ${payload}`);
 
-        // Insertion dans la base de données
-        const insertQuery = 'INSERT INTO messages (topic, payload) VALUES (?, ?)';
-        try {
-            await connection.query(insertQuery, [topic, payload]);
-            console.log('Message inséré avec succès.');
-        } catch (err) {
-            console.error('Erreur lors de l’insertion en base de données:', err.message);
-        }
-    });
+        const topicID = addOrGetTopicId(topic);
+        addMessage(message, topicID);
+
+    }); 
 
     client.on('error', (err) => {
         console.error('Erreur MQTT:', err.message);
     });
+
+    const addOrGetTopicId = async (name) => {
+        // Vérifie si le topic existe déjà
+        const checkQuery = 'SELECT id FROM topics WHERE name = ?';
+        const [rows] = await db.query(checkQuery, [name]);
+      
+        if (rows.length > 0) {
+          // Si le topic existe, retourne son ID
+          return rows[0].id;
+        }
+      
+        // Si le topic n'existe pas, l'ajoute et retourne son ID
+        const insertQuery = 'INSERT INTO topics (name) VALUES (?)';
+        const [result] = await db.query(insertQuery, [name]);
+        return result.insertId;
+      };
+      
+
+    const addMessage = async (message, topicId) => {
+        const query = 'INSERT INTO messages (message, topic_id) VALUES (?, ?)';
+        const [result] = await db.query(query, [JSON.stringify(message), topicId]);
+        return result.insertId;
+    };
+
+
+
 };
+
+
 
 const start = async () => {
     const connection = await connectToDatabase();

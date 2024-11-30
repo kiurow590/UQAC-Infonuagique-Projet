@@ -6,10 +6,6 @@
     </div>
     <div class="home-container">
 
-
-        <!-- Bouton Refresh -->
-        <button @click="refreshData" class="refresh-btn">Refresh</button>
-
         <!-- Graphiques -->
         <div class="charts-container">
             <div v-for="(data, sensorName) in sensorData" :key="sensorName" class="chart-card">
@@ -28,54 +24,38 @@ export default {
     name: 'AccueilComponent',
     data() {
         return {
+            userID: this.$route.query.userID,
             sensorData: {} // Map contenant les données des capteurs
         };
     },
     methods: {
         async fetchInitialData() {
             // Communication avec le serveur pour obtenir les données initiales
-            /*
             try {
-              const response = await fetch('http://localhost:3000/sensors/data', {
-                method: 'GET',
-                headers: {
-                  'Content-Type': 'application/json'
+                const userId = this.userId; // L'ID de l'utilisateur, assurez-vous qu'il est récupéré via un token, une session, etc.
+
+                const response = await fetch(`http://localhost:3000/topics/data`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                    body:{
+                        userId : this.userID
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error("Erreur lors de la récupération des données des abonnements");
                 }
-              });
-      
-              if (!response.ok) {
-                throw new Error("Erreur lors de la récupération des données des capteurs");
-              }
-      
-              const data = await response.json();
-              this.sensorData = data;
-              this.renderCharts();
+
+                const data = await response.json();
+                this.subscriptionsData = data;  // Données des abonnements et messages
+                this.renderCharts();  // Méthode pour afficher les graphiques, si nécessaire
+
             } catch (error) {
-              console.error("Erreur : ", error.message);
+                console.error("Erreur : ", error.message);
+                alert(`Erreur : ${error.message}`);
             }
-            */
-
-            // Valeurs simulées pour l'instant
-            const sensorData = {
-                sensor1: {
-                    "2024-11-18": 10,
-                    "2024-11-19": 15,
-                    "2024-11-20": 20
-                },
-                sensor2: {
-                    "2024-11-18": 5,
-                    "2024-11-19": 10,
-                    "2024-11-20": 12
-                },
-                sensor3: {
-                    "2024-11-18": 25,
-                    "2024-11-19": 14,
-                    "2024-11-20": 31.5
-                }
-            };
-
-            // Assigner les données des capteurs
-            this.sensorData = sensorData;
 
             // Appeler `nextTick` pour attendre que le DOM soit mis à jour
             await nextTick();
@@ -83,31 +63,7 @@ export default {
             // Appeler la fonction pour afficher les graphiques après que le DOM soit prêt
             this.renderCharts();
         },
-        async refreshData() {
-            // Communication avec le serveur pour mettre à jour les données
-            /*
-            try {
-              const response = await fetch('http://localhost:3000/sensors/refresh', {
-                method: 'GET',
-                headers: {
-                  'Content-Type': 'application/json'
-                }
-              });
-      
-              if (!response.ok) {
-                throw new Error("Erreur lors de la mise à jour des données des capteurs");
-              }
-      
-              const updatedData = await response.json();
-              this.sensorData = updatedData;
-              this.renderCharts();
-            } catch (error) {
-              console.error("Erreur : ", error.message);
-            }
-            */
 
-            this.renderCharts();
-        },
         renderCharts() {
             // Supprimer tous les graphiques existants avant de les recréer
             const chartIds = Object.keys(this.sensorData); // Récupère les noms des capteurs
@@ -166,7 +122,7 @@ export default {
             this.$router.push('/login'); // Redirige vers la page de connexion
         },
         goToAbonnement() {
-            this.$router.push('/abonnement'); // Redirige vers la page d'abonnement
+            this.$router.push({ path: '/abonnement', query: { userID: this.userID }] }); // Redirige vers la page d'abonnement
         }
     },
     mounted() {
