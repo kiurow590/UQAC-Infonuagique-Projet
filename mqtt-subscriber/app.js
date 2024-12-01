@@ -1,5 +1,6 @@
 import mqtt from 'mqtt';
 import mysql from 'mysql2/promise';
+import { logger } from './logger.mjs';
 
 // Configuration de la base de données
 const dbConfig = {
@@ -20,54 +21,51 @@ const mqttConfig = {
 const connectToDatabase = async () => {
     try {
         const connection = await mysql.createConnection(dbConfig);
-        console.log('Connecté à la base de données MySQL.');
+        logger.info('Connecté à la base de données MySQL.');
 
-        // Création de la table users
+        // Création des tables si elles n'existent pas
         await connection.query(`
             CREATE TABLE IF NOT EXISTS users (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                email VARCHAR(255) UNIQUE NOT NULL,
+                                                 id INT AUTO_INCREMENT PRIMARY KEY,
+                                                 email VARCHAR(255) UNIQUE NOT NULL,
                 password VARCHAR(255) NOT NULL
-            );
-            `);
-        console.log('Table `users` prête.');
+                );
+        `);
+        logger.info('Table `users` prête.');
 
-        // Création de la table topics
         await connection.query(`
             CREATE TABLE IF NOT EXISTS topics (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                name VARCHAR(255) NOT NULL
-            );
-            `);
-        console.log('Table `topics` prête.');
+                                                  id INT AUTO_INCREMENT PRIMARY KEY,
+                                                  name VARCHAR(255) NOT NULL
+                );
+        `);
+        logger.info('Table `topics` prête.');
 
-        // Création de la table messages
         await connection.query(`
             CREATE TABLE IF NOT EXISTS messages (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                message JSON NOT NULL,
-                timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                topic_id INT NOT NULL,
-                FOREIGN KEY (topic_id) REFERENCES topics(id) ON DELETE CASCADE
-            );
-            `);
-        console.log('Table `messages` prête.');
+                                                    id INT AUTO_INCREMENT PRIMARY KEY,
+                                                    message JSON NOT NULL,
+                                                    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                                                    topic_id INT NOT NULL,
+                                                    FOREIGN KEY (topic_id) REFERENCES topics(id) ON DELETE CASCADE
+                );
+        `);
+        logger.info('Table `messages` prête.');
 
-        // Création de la table subscriptions
         await connection.query(`
             CREATE TABLE IF NOT EXISTS subscriptions (
-                user_id INT NOT NULL,
-                topic_id INT NOT NULL,
-                PRIMARY KEY (user_id, topic_id),
+                                                         user_id INT NOT NULL,
+                                                         topic_id INT NOT NULL,
+                                                         PRIMARY KEY (user_id, topic_id),
                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
                 FOREIGN KEY (topic_id) REFERENCES topics(id) ON DELETE CASCADE
-            );
-            `);
-        console.log('Table `subscriptions` prête.');
+                );
+        `);
+        logger.info('Table `subscriptions` prête.');
 
         return connection;
     } catch (err) {
-        console.error('Erreur de connexion à la base de données:', err.message);
+        logger.error('Erreur de connexion à la base de données:', err.message);
         process.exit(1);
     }
 };
@@ -77,57 +75,46 @@ const connectToMQTT = (connection) => {
     const client = mqtt.connect(`mqtt://${mqttConfig.host}:${mqttConfig.port}`);
 
     client.on('connect', () => {
-        console.log('Connecté au broker MQTT.');
+        logger.info('Connecté au broker MQTT.');
         client.subscribe('test/topic', (err) => {
             if (err) {
-                console.error('Erreur lors de l’abonnement au topic:', err.message);
+                logger.error('Erreur lors de l’abonnement au topic:', err.message);
             } else {
-                console.log('Abonné au topic `test/topic`.');
+                logger.info('Abonné au topic `test/topic`.');
             }
         });
     });
 
     client.on('message', async (topic, message) => {
         const payload = message.toString();
-        console.log(`Message reçu sur ${topic}: ${payload}`);
+        logger.info(`Message reçu sur ${topic}: ${payload}`);
 
-        const topicID = addOrGetTopicId(topic);
-        addMessage(message, topicID);
-
-    }); 
+        const topicID = await addOrGetTopicId(topic);
+        await addMessage(payload, topicID);
+    });
 
     client.on('error', (err) => {
-        console.error('Erreur MQTT:', err.message);
+        logger.error('Erreur MQTT:', err.message);
     });
 
     const addOrGetTopicId = async (name) => {
-        // Vérifie si le topic existe déjà
         const checkQuery = 'SELECT id FROM topics WHERE name = ?';
-        const [rows] = await db.query(checkQuery, [name]);
-      
-        if (rows.length > 0) {
-          // Si le topic existe, retourne son ID
-          return rows[0].id;
-        }
-      
-        // Si le topic n'existe pas, l'ajoute et retourne son ID
-        const insertQuery = 'INSERT INTO topics (name) VALUES (?)';
-        const [result] = await db.query(insertQuery, [name]);
-        return result.insertId;
-      };
-      
+        const [rows] = await connection.query(checkQuery, [name]);
 
-    const addMessage = async (message, topicId) => {
-        const query = 'INSERT INTO messages (message, topic_id) VALUES (?, ?)';
-        const [result] = await db.query(query, [JSON.stringify(message), topicId]);
+        if (rows.length > 0) {
+            return rows[0].id;
+        }
+
+        const insertQuery = 'INSERT INTO topics (name) VALUES (?)';
+        const [result] = await connection.query(insertQuery, [name]);
         return result.insertId;
     };
 
-
-
+    const addMessage = async (message, topicId) => {
+        const query = 'INSERT INTO messages (message, topic_id) VALUES (?, ?)';
+        await connection.query(query, [JSON.stringify(message), topicId]);
+    };
 };
-
-
 
 const start = async () => {
     const connection = await connectToDatabase();
