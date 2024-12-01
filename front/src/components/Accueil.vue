@@ -32,13 +32,13 @@ export default {
         async fetchInitialData() {
             // Communication avec le serveur pour obtenir les données initiales
             try {
-                const userId = this.userId; // L'ID de l'utilisateur, assurez-vous qu'il est récupéré via un token, une session, etc.
+               // const userId = this.userId; // L'ID de l'utilisateur, assurez-vous qu'il est récupéré via un token, une session, etc.
 
                 const response = await fetch(`http://localhost:3000/topics/data`, {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json'
-                    }
+                    },
                     body:{
                         userId : this.userID
                     }
@@ -122,7 +122,7 @@ export default {
             this.$router.push('/login'); // Redirige vers la page de connexion
         },
         goToAbonnement() {
-            this.$router.push({ path: '/abonnement', query: { userID: this.userID }] }); // Redirige vers la page d'abonnement
+            this.$router.push({ path: '/abonnement', query: { userID: this.userID }}); // Redirige vers la page d'abonnement
         }
     },
     mounted() {

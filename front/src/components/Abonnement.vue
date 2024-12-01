@@ -91,7 +91,7 @@ export default {
         console.error("Erreur : ", error.message);
         alert(`Erreur : ${error.message}`);
       }
-    }
+    },
 
     async fetchCurrentSubscriptions() {
       try {
@@ -116,7 +116,7 @@ export default {
         console.error("Erreur : ", error.message);
         alert(`Erreur : ${error.message}`);
       }
-    }
+    },
 
     // Méthode pour aller à la page de connexion
     goToLogin() {
