@@ -1,25 +1,23 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: mqtt-listener
+  name: mqtt-api-rest
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: mqtt-listener
+      app: mqtt-api-rest
   template:
     metadata:
       labels:
-        app: mqtt-listener
+        app: mqtt-api-rest
     spec:
       containers:
-        - name: mqtt-subscriber
-          image: kiurow590/uqac-projet-infonuagique-event-listener-mqtt
+        - name: api-rest
+          image: kiurow590/uqac-projet-infonuagique-api-rest
+          ports:
+            - containerPort: 3000
           env:
-            - name: BROKER_IP
-              value: "192.168.49.2"
-            - name: BROKER_PORT
-              value: "30083"
             - name: DB_HOST
               value: "192.168.49.2"
             - name: DB_PORT
@@ -34,12 +32,12 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: mqtt-listener-service
+  name: mqtt-api-rest-service
 spec:
   selector:
-    app: mqtt-listener
+    app: mqtt-api-rest
   ports:
     - protocol: TCP
-      port: 1883
-      targetPort: 1883
+      port: 3000
+      targetPort: 3000
   type: ClusterIP

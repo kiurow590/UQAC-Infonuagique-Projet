@@ -76,11 +76,11 @@ const connectToMQTT = (connection) => {
 
     client.on('connect', () => {
         logger.info('Connecté au broker MQTT.');
-        client.subscribe('test/topic', (err) => {
+        client.subscribe('#', (err) => {
             if (err) {
-                logger.error('Erreur lors de l’abonnement au topic:', err.message);
+                logger.error('Erreur lors de l’abonnement à tous les topics:', err.message);
             } else {
-                logger.info('Abonné au topic `test/topic`.');
+                logger.info('Abonné à tous les topics.');
             }
         });
     });
