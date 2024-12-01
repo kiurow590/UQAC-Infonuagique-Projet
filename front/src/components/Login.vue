@@ -75,7 +75,7 @@ export default {
                 alert(`Erreur : ${error.message}`);
                 console.error('Erreur lors de la connexion:', error.message);
             }
-        }
+        },
 
         async signup() {
             try {
