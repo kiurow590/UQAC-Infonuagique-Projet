@@ -5,17 +5,38 @@ import { v4 as uuidv4 } from 'uuid';
 import { logger } from './logger.mjs';
 import bodyParser from 'body-parser';
 import mysql from 'mysql2/promise';
+import dotenv from 'dotenv';
+
+dotenv.config(); // Charger les variables d'environnement
 
 /**
  * CONSTANTES
  */
 const app = express();
+// CORS configuration
+const corsOptions = {
+    origin: ["http://localhost:8080", "http://localhost:3000"], // Specify allowed origins
+    methods: ["GET", "POST", "PUT", "DELETE"], // Specify allowed methods
+    allowedHeaders: ["Content-Type", "Authorization"], // Specify allowed headers
+    credentials: true // Allow credentials
+};
+
 const port = process.env.PORT || 3000;
+
+/**
+ * APPLICATION
+ */
+
+app.use(cors(/*corsOptions*/)); // Configurer CORS avec les options spécifiées
+app.use(express.json()); // Middleware to parse JSON requests
+//app.use(bodyParser.json());
+//app.use(bodyParser.urlencoded({ extended: true }));
+
 
 // Configuration de la base de données
 const dbConfig = {
     host: process.env.DB_HOST || '192.168.49.2',
-    port: process.env.DB_PORT || 3306,
+    port: process.env.DB_PORT || 30036,
     user: process.env.DB_USER || 'mqttuser',
     password: process.env.DB_PASSWORD || 'mqttpass',
     database: process.env.DB_NAME || 'mqtt_db'
@@ -35,18 +56,6 @@ const connectToDatabase = async () => {
 
 const db = await connectToDatabase();
 
-/**
- * APPLICATION
- */
-app.use(cors({
-    origin: ["http://localhost:8080", "http://localhost:3000"],
-    methods: ["GET", "POST", "PUT", "DELETE"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-    credentials: true
-}));
-app.use(express.json());
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
 
 /**
  * ROUTES DE L'API POUR CREER UN UTILISATEUR
@@ -55,20 +64,24 @@ app.post('/users/signup', async (req, res) => {
     const { email, password } = req.body;
 
     logger.info('Inscription de l\'utilisateur:', email);
-    logger.info('Données reçues:', req.body);
+    logger.info('Données reçues:', { email, password });
 
     if (!email || !password) {
-        return res.status(400).send('Missing email or password');
+        logger.error('Email ou mot de passe manquant');
+        return res.status(400).json({ message: 'Missing email or password' });
     }
 
     try {
         const hashedPassword = await bcrypt.hash(password, 10);
         const userID = uuidv4();
 
-        const [result] = await db.query(
-            'INSERT INTO User (id, email, password) VALUES (?, ?, ?)',
-            [userID, email, hashedPassword]
-        );
+        logger.info('Utilisateur inscrit en cours de creation:', email);
+        logger.info('ID de l\'utilisateur:', userID);
+
+        const query = 'INSERT INTO mqtt_db.users (id, email, password) VALUES (?, ?, ?)';
+        logger.debug('Executing query:', query, [userID, email, hashedPassword]);
+
+        const [result] = await db.query(query, [userID, email, hashedPassword]);
 
         logger.debug('Utilisateur inscrit:', result);
         return res.status(200).json({ message: "Sign Up success", userId: userID });
@@ -76,6 +89,12 @@ app.post('/users/signup', async (req, res) => {
         if (error.code === 'ER_DUP_ENTRY') {
             logger.error('Cet email est déjà utilisé:', error.message);
             return res.status(409).json('Cet email est déjà utilisé.');
+        } else if (error.code === 'ER_BAD_NULL_ERROR') {
+            logger.error('Une valeur NULL a été insérée là où elle n\'est pas autorisée:', error.message);
+            return res.status(400).json('Une valeur NULL a été insérée là où elle n\'est pas autorisée.');
+        } else if (error.code === 'ER_DATA_TOO_LONG') {
+            logger.error('Une des valeurs insérées est trop longue:', error.message);
+            return res.status(400).json('Une des valeurs insérées est trop longue.');
         } else {
             logger.error('Erreur Serveur lors de l\'inscription:', error.message);
             return res.status(500).send('Erreur Serveur lors de l\'inscription');
@@ -96,7 +115,7 @@ app.post('/users/login', async (req, res) => {
     }
 
     try {
-        const [rows] = await db.query('SELECT * FROM User WHERE email = ?', [email]);
+        const [rows] = await db.query('SELECT * FROM users WHERE email = ?', [email]);
         const existingUser = rows[0];
 
         if (!existingUser || !await bcrypt.compare(password, existingUser.password)) {
@@ -136,6 +155,28 @@ app.get('/topics', async (req, res) => {
     }
 });
 
+
+app.get('/subscriptions/current', async (req, res) => {
+    const { userId } = req.body;
+
+    if (!userId) {
+        return res.status(400).json({ message: 'Utilisateur non authentifié' });
+    }
+
+    try {
+        const [subscriptions] = await db.query(
+            'SELECT s.topic_id, t.name AS topic_name FROM subscriptions s JOIN topics t ON s.topic_id = t.id WHERE s.user_id = ?',
+            [userId]
+        );
+
+        return res.status(200).json(subscriptions);
+    } catch (error) {
+        logger.error('Erreur lors de la récupération des abonnements actuels :', error.message);
+        return res.status(500).json({ message: 'Erreur interne du serveur' });
+    }
+});
+
+
 app.post('/topics/subscribe', async (req, res) => {
     const { selectedTopics, userId } = req.body;
 
@@ -159,8 +200,8 @@ app.post('/topics/subscribe', async (req, res) => {
     }
 });
 
-app.get('/topics/data/:userId', async (req, res) => {
-    const userId = req.params.userId;
+app.get('/topics/data', async (req, res) => {
+    const { userId } = req.body;
 
     if (!userId) {
         return res.status(400).json({ message: 'Utilisateur non authentifié' });
@@ -197,25 +238,6 @@ app.get('/topics/data/:userId', async (req, res) => {
     }
 });
 
-app.get('/subscriptions/current/:userId', async (req, res) => {
-    const userId = req.params.userId;
-
-    if (!userId) {
-        return res.status(400).json({ message: 'Utilisateur non authentifié' });
-    }
-
-    try {
-        const [subscriptions] = await db.query(
-            'SELECT s.topic_id, t.name AS topic_name FROM subscriptions s JOIN topics t ON s.topic_id = t.id WHERE s.user_id = ?',
-            [userId]
-        );
-
-        return res.status(200).json(subscriptions);
-    } catch (error) {
-        logger.error('Erreur lors de la récupération des abonnements actuels :', error.message);
-        return res.status(500).json({ message: 'Erreur interne du serveur' });
-    }
-});
 
 /**
  * DEMARRAGE DE L'API

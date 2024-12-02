@@ -5,7 +5,7 @@ import { logger } from './logger.mjs';
 // Configuration de la base de données
 const dbConfig = {
     host: process.env.DB_HOST || '192.168.49.2',
-    port: process.env.DB_PORT || 3306,
+    port: process.env.DB_PORT || 30036,
     user: process.env.DB_USER || 'mqttuser',
     password: process.env.DB_PASSWORD || 'mqttpass',
     database: process.env.DB_NAME || 'mqtt_db'
@@ -14,7 +14,7 @@ const dbConfig = {
 // Configuration du broker MQTT
 const mqttConfig = {
     host: process.env.BROKER_IP || '192.168.49.2',
-    port: process.env.BROKER_PORT || 1883
+    port: process.env.BROKER_PORT || 30083
 };
 
 // Connexion à la base de données
@@ -26,7 +26,7 @@ const connectToDatabase = async () => {
         // Création des tables si elles n'existent pas
         await connection.query(`
             CREATE TABLE IF NOT EXISTS users (
-                                                 id INT AUTO_INCREMENT PRIMARY KEY,
+                                                 id VARCHAR(36) PRIMARY KEY UNIQUE NOT NULL,
                                                  email VARCHAR(255) UNIQUE NOT NULL,
                 password VARCHAR(255) NOT NULL
                 );
@@ -54,7 +54,7 @@ const connectToDatabase = async () => {
 
         await connection.query(`
             CREATE TABLE IF NOT EXISTS subscriptions (
-                                                         user_id INT NOT NULL,
+                                                         user_id VARCHAR(36) NOT NULL,
                                                          topic_id INT NOT NULL,
                                                          PRIMARY KEY (user_id, topic_id),
                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,

@@ -13,7 +13,7 @@ spec:
         app: mqtt-listener
     spec:
       containers:
-        - name: mqtt-subscriber
+        - name: mqtt-listener
           image: kiurow590/uqac-projet-infonuagique-event-listener-mqtt
           env:
             - name: BROKER_IP
