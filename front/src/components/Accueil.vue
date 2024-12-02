@@ -34,15 +34,15 @@ export default {
             try {
                // const userId = this.userId; // L'ID de l'utilisateur, assurez-vous qu'il est récupéré via un token, une session, etc.
 
-                const response = await fetch(`http://localhost:3000/topics/data`, {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body:{
-                        userId : this.userID
-                    }
-                });
+              const response = await fetch(`${process.env.VUE_APP_API_BASE_URL}/topics/data`, {
+                method: 'GET',
+                headers: {
+                  'Content-Type': 'application/json'
+                },
+                body: {
+                  userId: this.userID
+                }
+              });
 
                 if (!response.ok) {
                     throw new Error("Erreur lors de la récupération des données des abonnements");

@@ -43,13 +43,18 @@ export default {
             emailSignup: '',
             passwordSignup: '',
             userID: '',
-            loginError: "Mail ou mot de passe incorrect"
+            loginError: "Mail ou mot de passe incorrect",
+            api_url: process.env.VUE_APP_API_URL
         };
     },
     methods: {
         async login() {
             try {
-                const response = await fetch('http://localhost:3000/users/login', {
+
+                console.log('Connexion en cours...');
+                console.log(this.email);
+                console.log(this.password);
+                const response = await fetch(`${this.api_url}/users/login`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -59,7 +64,7 @@ export default {
                         password: this.password
                     })
                 });
-
+                console.log(response);
                 const data = await response.json();
 
                 if (!response.ok) {
@@ -79,16 +84,22 @@ export default {
 
         async signup() {
             try {
-                const response = await fetch('http://localhost:3000/users/signup', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        email: this.emailSignup, // Utilisation de `emailSignup` au lieu de `user`
-                        password: this.passwordSignup
-                    })
-                });
+
+              console.log('Inscription en cours...');
+              console.log(this.emailSignup);
+              console.log("ip to call : " + `${this.api_url}/users/signup`);
+             // console.log(this.passwordSignup);
+
+              const response = await fetch(`${this.api_url}/users/signup`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                  email: this.emailSignup,
+                  password: this.passwordSignup
+                })
+              });
 
                 const data = await response.json();
 

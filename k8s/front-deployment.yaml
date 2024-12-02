@@ -1,0 +1,50 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vue-app-config
+data:
+  VUE_APP_API_BASE_URL: "http://192.168.49.2:30002"
+  VUE_APP_BROKER_IP: "192.168.49.2"
+  VUE_APP_BROKER_PORT: "30083"
+  VUE_APP_DB_HOST: "192.168.49.2"
+  VUE_APP_DB_PORT: "30036"
+  VUE_APP_DB_USER: "mqttuser"
+  VUE_APP_DB_PASSWORD: "mqttpass"
+  VUE_APP_DB_NAME: "mqtt_db"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mqtt-front
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mqtt-front
+  template:
+    metadata:
+      labels:
+        app: mqtt-front
+    spec:
+      containers:
+        - name: mqtt-front
+          image: kiurow590/uqac-projet-infonuagique-front
+          ports:
+            - containerPort: 80
+          envFrom:
+            - configMapRef:
+                name: vue-app-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mqtt-front-service
+spec:
+  selector:
+    app: mqtt-front
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+      nodePort: 30000
+  type: NodePort

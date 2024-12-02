@@ -45,7 +45,7 @@ export default {
     async fetchSensors() {
       try {
         // Requête pour récupérer la liste des topics
-        const response = await fetch('http://localhost:3000/topics', {
+        const response = await fetch(`${process.env.VUE_APP_API_BASE_URL}/topics`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json'
@@ -68,13 +68,13 @@ export default {
     // Méthode pour envoyer la sélection au serveur
     async submitSelection() {
       try {
-        const response = await fetch('http://localhost:3000/topics/subscribe', {
+        const response = await fetch(`${process.env.VUE_APP_API_BASE_URL}/topics/subscribe`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            selectedTopics: this.selectedTopics, // Liste des topics sélectionnés
+            selectedTopics: this.selectedTopics,
             userID: this.userID
           })
         });
@@ -97,7 +97,7 @@ export default {
       try {
         const userId = this.userId; // L'ID de l'utilisateur, récupéré via session, token, ou autre mécanisme
 
-        const response = await fetch(`http://localhost:3000/subscriptions/current/${userId}`, {
+        const response = await fetch(`${process.env.VUE_APP_API_BASE_URL}/subscriptions/current/${userId}`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json'
