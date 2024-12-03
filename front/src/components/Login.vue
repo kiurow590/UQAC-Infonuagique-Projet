@@ -54,6 +54,7 @@ export default {
                 console.log('Connexion en cours...');
                 console.log(this.email);
                 console.log(this.password);
+                console.log("ip to call : " + `${this.api_url}/users/login`);
                 const response = await fetch(`${this.api_url}/users/login`, {
                     method: 'POST',
                     headers: {

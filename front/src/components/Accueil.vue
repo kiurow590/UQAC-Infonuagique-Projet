@@ -25,7 +25,9 @@ export default {
     data() {
         return {
             userID: this.$route.query.userID,
-            sensorData: {} // Map contenant les données des capteurs
+            sensorData: {}, // Map contenant les données des capteurs
+            api_url: process.env.VUE_APP_API_URL
+
         };
     },
     methods: {
@@ -34,7 +36,7 @@ export default {
             try {
                // const userId = this.userId; // L'ID de l'utilisateur, assurez-vous qu'il est récupéré via un token, une session, etc.
 
-              const response = await fetch(`${process.env.VUE_APP_API_BASE_URL}/topics/data`, {
+              const response = await fetch(`${this.api_url}/topics/data`, {
                 method: 'GET',
                 headers: {
                   'Content-Type': 'application/json'
