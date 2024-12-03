@@ -14,16 +14,16 @@ spec:
     spec:
       containers:
         - name: mqtt-listener
-          image: kiurow590/uqac-projet-infonuagique-event-listener-mqtt
+          image: kiurow590/uqac-projet-infonuagique-event-listener-mqtt:arm64
           env:
             - name: BROKER_IP
-              value: "192.168.49.2"
+              value: "mosquitto"
             - name: BROKER_PORT
-              value: "30083"
+              value: "1883"
             - name: DB_HOST
-              value: "192.168.49.2"
+              value: "mysql"
             - name: DB_PORT
-              value: "30036"
+              value: "3306"
             - name: DB_USER
               value: "mqttuser"
             - name: DB_PASSWORD

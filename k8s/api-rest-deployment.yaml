@@ -14,14 +14,14 @@ spec:
     spec:
       containers:
         - name: api-rest
-          image: kiurow590/uqac-projet-infonuagique-api-rest
+          image: kiurow590/uqac-projet-infonuagique-api-rest:arm64
           ports:
             - containerPort: 3000
           env:
             - name: DB_HOST
-              value: "192.168.49.2"
+              value: "mysql"
             - name: DB_PORT
-              value: "30036"
+              value: "3306"
             - name: DB_USER
               value: "mqttuser"
             - name: DB_PASSWORD
