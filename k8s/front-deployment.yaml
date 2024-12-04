@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: mqtt-front
-          image: kiurow590/uqac-projet-infonuagique-front
+          image: kiurow590/uqac-projet-infonuagique-front:arm64
           ports:
             - containerPort: 80
           env:

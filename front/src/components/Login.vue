@@ -44,7 +44,7 @@ export default {
             passwordSignup: '',
             userID: '',
             loginError: "Mail ou mot de passe incorrect",
-            api_url: process.env.VUE_APP_API_URL
+            api_url: 'http://192.168.2.133:30003'
         };
     },
     methods: {
@@ -54,8 +54,8 @@ export default {
                 console.log('Connexion en cours...');
                 console.log(this.email);
                 console.log(this.password);
-                console.log("ip to call : " + `${this.api_url}/users/login`);
-                const response = await fetch(`${this.api_url}/users/login`, {
+                console.log("ip to call : " + `http://192.168.2.133:30003/users/login`);
+                const response = await fetch(`http://192.168.2.133:30003/users/login`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -88,10 +88,10 @@ export default {
 
               console.log('Inscription en cours...');
               console.log(this.emailSignup);
-              console.log("ip to call : " + `${this.api_url}/users/signup`);
+              console.log("ip to call : " + `http://192.168.2.133:30003/users/signup`);
              // console.log(this.passwordSignup);
 
-              const response = await fetch(`${this.api_url}/users/signup`, {
+              const response = await fetch(`http://192.168.2.133:30003/users/signup`, {
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json'

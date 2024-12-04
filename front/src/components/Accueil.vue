@@ -26,7 +26,7 @@ export default {
         return {
             userID: this.$route.query.userID,
             sensorData: {}, // Map contenant les données des capteurs
-            api_url: process.env.VUE_APP_API_URL
+            api_url: 'http://192.168.2.133:30003'
 
         };
     },
@@ -36,7 +36,7 @@ export default {
             try {
                // const userId = this.userId; // L'ID de l'utilisateur, assurez-vous qu'il est récupéré via un token, une session, etc.
 
-              const response = await fetch(`${this.api_url}/topics/data`, {
+              const response = await fetch(`http://192.168.2.133:30003/topics/data`, {
                 method: 'GET',
                 headers: {
                   'Content-Type': 'application/json'

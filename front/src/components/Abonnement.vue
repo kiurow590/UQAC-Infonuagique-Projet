@@ -28,7 +28,7 @@ export default {
       userID: this.$route.query.userID,
       topics: [], // Liste des capteurs reçus depuis le serveur
       selectedTopics: [], // Liste des capteurs sélectionnés par l'utilisateur
-      api_url: process.env.VUE_APP_API_URL
+      api_url: 'http://192.168.2.133:30003'
     };
   },
   methods: {
@@ -46,7 +46,7 @@ export default {
     async fetchSensors() {
       try {
         // Requête pour récupérer la liste des topics
-        const response = await fetch(`${this.api_url}/topics`, {
+        const response = await fetch(`http://192.168.2.133:30003/topics`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json'
@@ -69,7 +69,7 @@ export default {
     // Méthode pour envoyer la sélection au serveur
     async submitSelection() {
       try {
-        const response = await fetch(`${this.api_url}/topics/subscribe`, {
+        const response = await fetch(`http://192.168.2.133:30003/topics/subscribe`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -98,7 +98,7 @@ export default {
       try {
         const userId = this.userId; // L'ID de l'utilisateur, récupéré via session, token, ou autre mécanisme
 
-        const response = await fetch(`${this.api_url}/subscriptions/current/${userId}`, {
+        const response = await fetch(`http://192.168.2.133:30003/subscriptions/current/${userId}`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json'
