@@ -5,7 +5,15 @@
         <button @click="goToAbonnement" class="nav-btn">Page d'Abonnement</button>
     </div>
     <div class="home-container">
-
+        <!-- Sélecteur de plages temporelles -->
+        <div class="time-range-selector">
+            <label for="time-range">Afficher les données pour : </label>
+            <select id="time-range" v-model="selectedTimeRange" @change="updateCharts">
+                <option v-for="option in timeRangeOptions" :key="option.value" :value="option.value">
+                    {{ option.label }}
+                </option>
+            </select>
+        </div>
         <!-- Graphiques -->
         <div class="charts-container">
             <div v-for="(data, sensorName) in sensorData" :key="sensorName" class="chart-card">
@@ -26,7 +34,18 @@ export default {
         return {
             userId: this.$route.query.userId,
             sensorData: {}, // Map contenant les données des capteurs
-            api_url: 'http://192.168.2.133:3000'
+            api_url: 'http://192.168.2.133:3000',
+            selectedTimeRange: 'all', // Par défaut, "all" est sélectionné
+            timeRangeOptions: [
+                { label: '1 heure', value: '1h' },
+                { label: '6 heures', value: '6h' },
+                { label: '12 heures', value: '12h' },
+                { label: '1 jour', value: '1j' },
+                { label: '7 jours', value: '7j' },
+                { label: 'Tout', value: 'all' }
+            ],
+            /*mqttClient: null, // Instance MQTT
+            brokerUrl: 'http://192.168.49.2:30083', // URL du broker MQTT*/
 
         };
     },
@@ -48,8 +67,8 @@ export default {
 
                 const data = await response.json();
                 this.subscriptionsData = data;  // Données des abonnements et messages
+                this.processSensorData(); // Traiter les données initiales
                 this.renderCharts();  // Méthode pour afficher les graphiques, si nécessaire
-
             } catch (error) {
                 console.error("Erreur : ", error.message);
                 //alert(`Erreur : ${error.message}`);
@@ -59,42 +78,88 @@ export default {
             await nextTick();
 
             // Appeler la fonction pour afficher les graphiques après que le DOM soit prêt
-            this.renderCharts();
+            this.updateCharts();
         },
 
-        renderCharts() {
-            // Supprimer tous les graphiques existants avant de les recréer
+        processSensorData() {
             const data = this.subscriptionsData;
 
-            if (!data) {
-                return;
-            }
+            if (!data) return;
 
-            for(let i = 0; i < data.length; i++) {
-                var sensorValues = [];
+            for (let i = 0; i < data.length; i++) {
                 const sensorName = data[i].topicName;
-                for(let j = 0; j < data[i].messages.length; j++) {
-                    var value = JSON.parse(data[i].messages[j].message).value;
-                    sensorValues.push(value);
+                const sensorValues = {};
+
+                for (let j = 0; j < data[i].messages.length; j++) {
+                    const value = JSON.parse(data[i].messages[j].message).value;
+                    const date = new Date(data[i].messages[j].timestamp);
+                    date.setHours(date.getHours() - 5);
+                    sensorValues[date] = value;
                 }
+
                 this.sensorData[sensorName] = sensorValues;
             }
 
-            const chartIds = Object.keys(this.sensorData); // Récupère les noms des capteurs
+            // Initialiser les données filtrées à toutes les données
+            this.filteredData = JSON.parse(JSON.stringify(this.sensorData));
+        },
+
+        updateCharts() {
+            // Filtrer les données selon la plage temporelle sélectionnée
+            this.filterDataByTimeRange();
+
+            // Supprimer et recréer les graphiques
+            const chartIds = Object.keys(this.filteredData);
             chartIds.forEach(sensorName => {
                 const chartElement = document.getElementById(`chart-${sensorName}`);
-                const chartInstance = Chart.getChart(chartElement); // Récupère l'instance du graphique
+                const chartInstance = Chart.getChart(chartElement);
+
                 if (chartInstance) {
-                    chartInstance.destroy(); // Détruit l'instance du graphique
+                    chartInstance.destroy();
                 }
             });
-            
 
-            // Créer un graphique pour chaque capteur
-            Object.entries(this.sensorData).forEach(([sensorName, data], index) => {
+            this.renderCharts();
+        },
+
+        filterDataByTimeRange() {
+            const now = new Date();
+            const ranges = {
+                '1h': 1 * 60 * 60 * 1000,
+                '6h': 6 * 60 * 60 * 1000,
+                '12h': 12 * 60 * 60 * 1000,
+                '1j': 24 * 60 * 60 * 1000,
+                '7j': 7 * 24 * 60 * 60 * 1000,
+                'all': Infinity
+            };
+
+            const timeLimit = ranges[this.selectedTimeRange];
+
+            this.filteredData = {};
+            Object.entries(this.sensorData).forEach(([sensorName, data]) => {
+                const filteredSensorData = {};
+
+                Object.entries(data).forEach(([timestamp, value]) => {
+                    const date = new Date(timestamp);
+                    if (now - date <= timeLimit) {
+                        filteredSensorData[timestamp] = value;
+                    }
+                });
+
+                this.filteredData[sensorName] = filteredSensorData;
+            });
+        },
+
+        renderCharts() {
+            Object.entries(this.filteredData).forEach(([sensorName, data], index) => {
                 const ctx = document.getElementById(`chart-${sensorName}`);
-                const labels = Object.keys(data); // Dates
                 const values = Object.values(data); // Mesures
+                const rawDates = Object.keys(data); // Dates
+
+                const labels = rawDates.map(date => {
+                    const parsedDate = new Date(date);
+                    return `${parsedDate.getDate().toString().padStart(2, '0')}/${(parsedDate.getMonth() + 1).toString().padStart(2, '0')}/${parsedDate.getFullYear().toString().slice(-2)} - ${parsedDate.toLocaleTimeString('fr-FR', { hour12: false })}`;
+                });
 
                 new Chart(ctx, {
                     type: 'line',
@@ -116,6 +181,20 @@ export default {
                             legend: {
                                 display: false
                             }
+                        },
+                        scales: {
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Dates'
+                                }
+                            },
+                            y: {
+                                title: {
+                                    display: true,
+                                    text: 'Mesures'
+                                }
+                            }
                         }
                     }
                 });
@@ -133,16 +212,80 @@ export default {
             ];
             return colors[index % colors.length];
         },
+
+        /*connectToMQTT() {
+            // Créer un client MQTT
+            this.mqttClient = mqtt.connect(this.brokerUrl);
+
+            // Gérer les événements MQTT
+            this.mqttClient.on('connect', () => {
+                console.log('Connecté au broker MQTT');
+                // S'abonner aux topics
+                this.subscribedTopics.forEach((topic) => {
+                    this.mqttClient.subscribe(topic, (err) => {
+                        if (err) {
+                            console.error(`Erreur d'abonnement au topic ${topic}`, err);
+                        } else {
+                            console.log(`Abonné au topic : ${topic}`);
+                        }
+                    });
+                });
+            });
+
+            this.mqttClient.on('message', (topic, message) => {
+                this.handleIncomingMessage(topic, message);
+            });
+
+            this.mqttClient.on('error', (error) => {
+                console.error('Erreur MQTT :', error);
+            });
+        },
+
+        handleIncomingMessage(topic, message) {
+            try {
+                const parsedMessage = JSON.parse(message.toString());
+                console.log(`Message reçu sur ${topic} :`, parsedMessage);
+
+                // Ajouter les données reçues au sensorData
+                const sensorName = topic.split('/').pop(); // Exemple : récupérer le nom du capteur depuis le topic
+                if (!this.sensorData[sensorName]) {
+                    this.$set(this.sensorData, sensorName, {});
+                }
+
+                const timestamp = new Date().toISOString();
+                this.$set(this.sensorData[sensorName], timestamp, parsedMessage.value);
+
+                // Mettre à jour les graphiques
+                this.renderCharts();
+            } catch (err) {
+                console.error('Erreur lors du traitement du message MQTT :', err);
+            }
+        },
+
+        disconnectFromMQTT() {
+            if (this.mqttClient) {
+                this.mqttClient.end();
+                console.log('Déconnecté du broker MQTT');
+            }
+        },*/
+
         goToLogin() {
             this.$router.push('/login'); // Redirige vers la page de connexion
         },
+
         goToAbonnement() {
             this.$router.push({ path: '/abonnement', query: { userId: this.userId } }); // Redirige vers la page d'abonnement
         }
     },
     mounted() {
         this.fetchInitialData();
-    }
+       // this.connectToMQTT();
+    },
+
+    /*beforeUnmount() {
+        // Déconnexion du broker MQTT avant de détruire le composant
+        this.disconnectFromMQTT();
+    }*/
 };
 </script>
 
@@ -213,4 +356,22 @@ export default {
     color: #333;
     margin: 0;
 }
+
+.time-range-selector {
+    margin: 20px 0;
+    text-align: center;
+}
+
+.time-range-selector label {
+    font-weight: bold;
+    margin-right: 10px;
+}
+
+.time-range-selector select {
+    padding: 5px 10px;
+    border-radius: 5px;
+    border: 1px solid #ddd;
+}
+
+
 </style>

@@ -104,15 +104,12 @@ export default {
           }
         });
 
-        console.log(response);
-
         if (!response.ok) {
           throw new Error("Erreur lors de la récupération des abonnements actuels");
         }
 
         const data = await response.json();
-        this.currentSubscriptions = data;  // Liste des abonnements actuels
-        console.log("Abonnements actuels : ", this.currentSubscriptions);
+        this.selectedTopics = data.map(subscription => subscription.topic_id);
       } catch (error) {
         console.error("Erreur : ", error.message);
         alert(`Erreur : ${error.message}`);
