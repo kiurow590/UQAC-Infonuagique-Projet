@@ -25,10 +25,10 @@ export default {
   name: "AbonnementComponent",
   data() {
     return {
-      userID: this.$route.query.userID,
+      userId: this.$route.query.userId,
       topics: [], // Liste des capteurs reçus depuis le serveur
       selectedTopics: [], // Liste des capteurs sélectionnés par l'utilisateur
-      api_url: 'http://192.168.2.133:30003'
+      api_url: 'http://192.168.2.133:3000'
     };
   },
   methods: {
@@ -46,7 +46,7 @@ export default {
     async fetchSensors() {
       try {
         // Requête pour récupérer la liste des topics
-        const response = await fetch(`http://192.168.2.133:30003/topics`, {
+        const response = await fetch(`http://192.168.2.133:3000/topics`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json'
@@ -69,14 +69,14 @@ export default {
     // Méthode pour envoyer la sélection au serveur
     async submitSelection() {
       try {
-        const response = await fetch(`http://192.168.2.133:30003/topics/subscribe`, {
+        const response = await fetch(`http://192.168.2.133:3000/topics/subscribe`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
             selectedTopics: this.selectedTopics,
-            userID: this.userID
+            userId: this.userId
           })
         });
 
@@ -87,7 +87,7 @@ export default {
 
         // Affiche un message de succès ou redirige l'utilisateur
         console.log("Abonnement réussi !");
-        this.$router.push({ path: "/accueil", query: { userID: this.userID } }); // Rediriger vers la page d'accueil
+        this.$router.push({ path: "/accueil", query: { userId: this.userId } }); // Rediriger vers la page d'accueil
       } catch (error) {
         console.error("Erreur : ", error.message);
         alert(`Erreur : ${error.message}`);
@@ -96,14 +96,15 @@ export default {
 
     async fetchCurrentSubscriptions() {
       try {
-        const userId = this.userId; // L'ID de l'utilisateur, récupéré via session, token, ou autre mécanisme
 
-        const response = await fetch(`http://192.168.2.133:30003/subscriptions/current/${userId}`, {
+        const response = await fetch(`http://192.168.2.133:3000/subscriptions/current?userId=${this.userId}`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json'
           }
         });
+
+        console.log(response);
 
         if (!response.ok) {
           throw new Error("Erreur lors de la récupération des abonnements actuels");
@@ -112,7 +113,6 @@ export default {
         const data = await response.json();
         this.currentSubscriptions = data;  // Liste des abonnements actuels
         console.log("Abonnements actuels : ", this.currentSubscriptions);
-
       } catch (error) {
         console.error("Erreur : ", error.message);
         alert(`Erreur : ${error.message}`);
@@ -126,13 +126,13 @@ export default {
 
     // Méthode pour aller à la page d'accueil
     goToAccueil() {
-      this.$router.push({ path: "/accueil" });
+      this.$router.push({ path: '/accueil', query: { userId: this.userId } });
     }
   },
   created() {
-    // Appel à `fetchSensors` lors du montage du composant
     this.fetchSensors();
     this.fetchCurrentSubscriptions();
+
   }
 };
 </script>

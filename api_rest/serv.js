@@ -7,7 +7,7 @@ import bodyParser from 'body-parser';
 import mysql from 'mysql2/promise';
 import dotenv from 'dotenv';
 
-dotenv.config(); // Charger les variables d'environnement
+//dotenv.config(); // Charger les variables d'environnement
 
 /**
  * CONSTANTES
@@ -35,7 +35,7 @@ app.use(express.json()); // Middleware to parse JSON requests
 
 // Configuration de la base de données
 const dbConfig = {
-    host: process.env.DB_HOST || '192.168.49.2',
+    host: process.env.DB_HOST || '192.168.2.133',
     port: process.env.DB_PORT || 30036,
     user: process.env.DB_USER || 'mqttuser',
     password: process.env.DB_PASSWORD || 'mqttpass',
@@ -73,18 +73,18 @@ app.post('/users/signup', async (req, res) => {
 
     try {
         const hashedPassword = await bcrypt.hash(password, 10);
-        const userID = uuidv4();
+        const userId = uuidv4();
 
         logger.info('Utilisateur inscrit en cours de creation:', email);
-        logger.info('ID de l\'utilisateur:', userID);
+        logger.info('ID de l\'utilisateur:', userId);
 
         const query = 'INSERT INTO mqtt_db.users (id, email, password) VALUES (?, ?, ?)';
-        logger.debug('Executing query:', query, [userID, email, hashedPassword]);
+        logger.debug('Executing query:', query, [userId, email, hashedPassword]);
 
-        const [result] = await db.query(query, [userID, email, hashedPassword]);
+        const [result] = await db.query(query, [userId, email, hashedPassword]);
 
         logger.debug('Utilisateur inscrit:', result);
-        return res.status(200).json({ message: "Sign Up success", userId: userID });
+        return res.status(200).json({ message: "Sign Up success", userId: userId });
     } catch (error) {
         if (error.code === 'ER_DUP_ENTRY') {
             logger.error('Cet email est déjà utilisé:', error.message);
@@ -157,7 +157,7 @@ app.get('/topics', async (req, res) => {
 
 
 app.get('/subscriptions/current', async (req, res) => {
-    const { userId } = req.body;
+    const userId = req.query.userId;
 
     if (!userId) {
         return res.status(400).json({ message: 'Utilisateur non authentifié' });
@@ -188,6 +188,9 @@ app.post('/topics/subscribe', async (req, res) => {
     }
 
     try {
+        //il faut delete les anciens abonnements
+        const queryDelete = 'DELETE FROM subscriptions WHERE user_id = ?';
+        await db.query(queryDelete, [userId]);
         const query = 'INSERT IGNORE INTO subscriptions (user_id, topic_id) VALUES (?, ?)';
         for (const topicId of selectedTopics) {
             await db.query(query, [userId, topicId]);
@@ -201,7 +204,7 @@ app.post('/topics/subscribe', async (req, res) => {
 });
 
 app.get('/topics/data', async (req, res) => {
-    const { userId } = req.body;
+    const userId = req.query.userId;
 
     if (!userId) {
         return res.status(400).json({ message: 'Utilisateur non authentifié' });
@@ -218,7 +221,7 @@ app.get('/topics/data', async (req, res) => {
         }
 
         const [messages] = await db.query(
-            'SELECT m.topic_id, m.message FROM messages m WHERE m.topic_id IN (?)',
+            'SELECT m.topic_id, m.message, m.timestamp FROM messages m WHERE m.topic_id IN (?)',
             [subscriptions.map(sub => sub.topic_id)]
         );
 

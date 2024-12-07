@@ -42,9 +42,9 @@ export default {
             password: '',
             emailSignup: '',
             passwordSignup: '',
-            userID: '',
+            userId: '',
             loginError: "Mail ou mot de passe incorrect",
-            api_url: 'http://192.168.2.133:30003'
+            api_url: 'http://192.168.2.133:3000'
         };
     },
     methods: {
@@ -54,8 +54,8 @@ export default {
                 console.log('Connexion en cours...');
                 console.log(this.email);
                 console.log(this.password);
-                console.log("ip to call : " + `http://192.168.2.133:30003/users/login`);
-                const response = await fetch(`http://192.168.2.133:30003/users/login`, {
+                console.log("ip to call : " + `http://192.168.2.133:3000/users/login`);
+                const response = await fetch(`http://192.168.2.133:3000/users/login`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -73,10 +73,10 @@ export default {
                     throw new Error(data.message || 'Une erreur est survenue');
                 }
 
-                this.userID = data.userId;
+                this.userId = data.userId;
 
                 console.log('Connexion réussie:', data);
-                this.$router.push({ path: '/accueil', query: { userID: this.userID } }); // Redirection vers la page d'accueil
+                this.$router.push({ path: '/accueil', query: { userId: this.userId } }); // Redirection vers la page d'accueil
             } catch (error) {
                 alert(`Erreur : ${error.message}`);
                 console.error('Erreur lors de la connexion:', error.message);
@@ -86,21 +86,21 @@ export default {
         async signup() {
             try {
 
-              console.log('Inscription en cours...');
-              console.log(this.emailSignup);
-              console.log("ip to call : " + `http://192.168.2.133:30003/users/signup`);
-             // console.log(this.passwordSignup);
+                console.log('Inscription en cours...');
+                console.log(this.emailSignup);
+                console.log("ip to call : " + `http://192.168.2.133:3000/users/signup`);
+                // console.log(this.passwordSignup);
 
-              const response = await fetch(`http://192.168.2.133:30003/users/signup`, {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                  email: this.emailSignup,
-                  password: this.passwordSignup
-                })
-              });
+                const response = await fetch(`http://192.168.2.133:3000/users/signup`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        email: this.emailSignup,
+                        password: this.passwordSignup
+                    })
+                });
 
                 const data = await response.json();
 
@@ -109,10 +109,10 @@ export default {
                     throw new Error(data);
                 }
 
-                this.userID = data.userId;
+                this.userId = data.userId;
 
                 console.log(data);
-                this.$router.push({ path: '/abonnement', query: { userID: this.userID } }); // Redirection vers la page d'abonnement
+                this.$router.push({ path: '/abonnement', query: { userId: this.userId } }); // Redirection vers la page d'abonnement
             } catch (error) {
                 alert('Erreur : mot de passe trop court ou email invalide');
                 console.error(error.message);

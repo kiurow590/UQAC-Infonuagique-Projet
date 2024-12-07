@@ -24,9 +24,9 @@ export default {
     name: 'AccueilComponent',
     data() {
         return {
-            userID: this.$route.query.userID,
+            userId: this.$route.query.userId,
             sensorData: {}, // Map contenant les données des capteurs
-            api_url: 'http://192.168.2.133:30003'
+            api_url: 'http://192.168.2.133:3000'
 
         };
     },
@@ -34,17 +34,13 @@ export default {
         async fetchInitialData() {
             // Communication avec le serveur pour obtenir les données initiales
             try {
-               // const userId = this.userId; // L'ID de l'utilisateur, assurez-vous qu'il est récupéré via un token, une session, etc.
-
-              const response = await fetch(`http://192.168.2.133:30003/topics/data`, {
-                method: 'GET',
-                headers: {
-                  'Content-Type': 'application/json'
-                },
-                body: {
-                  userId: this.userID
-                }
-              });
+                // const userId = this.userId; // L'ID de l'utilisateur, assurez-vous qu'il est récupéré via un token, une session, etc.
+                const response = await fetch(`http://192.168.2.133:3000/topics/data?userId=${this.userId}`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
 
                 if (!response.ok) {
                     throw new Error("Erreur lors de la récupération des données des abonnements");
@@ -56,7 +52,7 @@ export default {
 
             } catch (error) {
                 console.error("Erreur : ", error.message);
-                alert(`Erreur : ${error.message}`);
+                //alert(`Erreur : ${error.message}`);
             }
 
             // Appeler `nextTick` pour attendre que le DOM soit mis à jour
@@ -68,6 +64,22 @@ export default {
 
         renderCharts() {
             // Supprimer tous les graphiques existants avant de les recréer
+            const data = this.subscriptionsData;
+
+            if (!data) {
+                return;
+            }
+
+            for(let i = 0; i < data.length; i++) {
+                var sensorValues = [];
+                const sensorName = data[i].topicName;
+                for(let j = 0; j < data[i].messages.length; j++) {
+                    var value = JSON.parse(data[i].messages[j].message).value;
+                    sensorValues.push(value);
+                }
+                this.sensorData[sensorName] = sensorValues;
+            }
+
             const chartIds = Object.keys(this.sensorData); // Récupère les noms des capteurs
             chartIds.forEach(sensorName => {
                 const chartElement = document.getElementById(`chart-${sensorName}`);
@@ -76,10 +88,11 @@ export default {
                     chartInstance.destroy(); // Détruit l'instance du graphique
                 }
             });
+            
 
             // Créer un graphique pour chaque capteur
             Object.entries(this.sensorData).forEach(([sensorName, data], index) => {
-                const ctx = document.getElementById(`chart-${sensorName}`).getContext('2d');
+                const ctx = document.getElementById(`chart-${sensorName}`);
                 const labels = Object.keys(data); // Dates
                 const values = Object.values(data); // Mesures
 
@@ -124,7 +137,7 @@ export default {
             this.$router.push('/login'); // Redirige vers la page de connexion
         },
         goToAbonnement() {
-            this.$router.push({ path: '/abonnement', query: { userID: this.userID }}); // Redirige vers la page d'abonnement
+            this.$router.push({ path: '/abonnement', query: { userId: this.userId } }); // Redirige vers la page d'abonnement
         }
     },
     mounted() {
