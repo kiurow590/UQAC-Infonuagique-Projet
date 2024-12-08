@@ -6,6 +6,8 @@ import { logger } from './logger.mjs';
 import bodyParser from 'body-parser';
 import mysql from 'mysql2/promise';
 import dotenv from 'dotenv';
+import { WebSocketServer } from 'ws';
+import mqtt from 'mqtt';
 
 //dotenv.config(); // Charger les variables d'environnement
 
@@ -22,6 +24,8 @@ const corsOptions = {
 };
 
 const port = process.env.PORT || 3000;
+var userId = null;
+var users = {};
 
 /**
  * APPLICATION
@@ -56,6 +60,89 @@ const connectToDatabase = async () => {
 
 const db = await connectToDatabase();
 
+const options = {
+    // Clean session
+    clean: true,
+    connectTimeout: 4000,
+    // Authentication
+    clientId: 'emqx_test',
+    username: 'emqx_test',
+    password: 'emqx_test',
+}
+// Connexion au broker MQTT
+const mqttClient = mqtt.connect('mqtt://192.168.2.133:30083', options);
+
+mqttClient.on('connect', async () => {
+    logger.info('Connecté au broker MQTT');
+});
+
+mqttClient.on('message', async (topic, message) => {
+    logger.info(`Message reçu sur le topic ${topic}: ${message.toString()}`);
+
+    try {
+        const [subscriptions] = await db.query(
+            'SELECT user_id, topic_id FROM subscriptions s JOIN topics t ON s.topic_id = t.id WHERE t.name = ?',
+            [topic]
+        );
+
+        for (const sub of subscriptions) {
+            const ws = users[sub.user_id];
+            if (ws) {
+                ws.send(JSON.stringify({
+                    topic: topic,
+                    message: message.toString(),
+                    date: new Date(Date.now() + 5 * 60 * 60 * 1000).toISOString()
+                }));
+            }
+        }
+
+    } catch (error) {
+        logger.error('Erreur lors de la récupération des abonnements :', error.message);
+    }
+});
+
+// Start the HTTP server
+const server = app.listen(3333, () => {
+    logger.info(`Server is running on port ${3333}`);
+});
+
+// Create WebSocket server
+const wss = new WebSocketServer({ server });
+
+wss.on('connection', async (ws) => {
+    logger.info('New client connected');
+
+    ws.on('message', async (message) => {
+        logger.info(`Received message: ${message}`);
+        userId = JSON.parse(message).userId;
+
+        users[userId] = ws;
+
+        try {
+            // récupération des abonnement du client via la bdd
+            logger.info('Récupération des abonnements du client');
+            const [subscriptions] = await db.query(
+                'SELECT t.name FROM subscriptions s JOIN topics t ON s.topic_id = t.id WHERE s.user_id = ?',
+                [userId]
+            );
+            for (const sub of subscriptions) {
+                mqttClient.subscribe(sub.name, (err) => {
+                    if (err) {
+                        logger.error('Erreur lors de l\'abonnement au topic:', err.message);
+                    } else {
+                        logger.info('Abonné au topic:', sub.name);
+                    }
+                });
+            }
+        } catch (error) {
+            logger.error('Erreur lors de l\'abonnement au topic:', error.message);
+        }
+    });
+
+    ws.on('close', () => {
+        console.log('Client disconnected');
+    });
+});
 
 /**
  * ROUTES DE L'API POUR CREER UN UTILISATEUR

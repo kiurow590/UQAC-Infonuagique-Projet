@@ -44,12 +44,47 @@ export default {
                 { label: '7 jours', value: '7j' },
                 { label: 'Tout', value: 'all' }
             ],
-            /*mqttClient: null, // Instance MQTT
-            brokerUrl: 'http://192.168.49.2:30083', // URL du broker MQTT*/
+            chart: null,
+            chartInstances: {},
 
         };
     },
+    created() {
+        this.connectWebSocket();
+    },
     methods: {
+
+        connectWebSocket() {
+            const socket = new WebSocket('http://192.168.2.133:3333'); // Remplacez par l'adresse de votre serveur WebSocket
+
+        
+            socket.onopen = () => {
+                console.log('WebSocket connection established');
+                socket.send(JSON.stringify({ userId: this.userId }));
+            };
+
+            socket.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                var date = data.date;
+                var message = data.message;
+                for(var i = 0; i < this.subscriptionsData.length; i++){
+                    if(this.subscriptionsData[i].topicName == data.topic){
+                        this.subscriptionsData[i].messages.push({topic_id: i+1, timestamp: date, message: message});
+                    }
+                }
+                this.processSensorData();
+                this.updateCharts();
+            };
+
+            socket.onclose = () => {
+                console.log('WebSocket connection closed');
+            };
+
+            socket.onerror = (error) => {
+                console.error('WebSocket error:', error);
+            };
+        },
+
         async fetchInitialData() {
             // Communication avec le serveur pour obtenir les données initiales
             try {
@@ -176,6 +211,7 @@ export default {
                         ]
                     },
                     options: {
+                        animation: false,
                         responsive: true,
                         plugins: {
                             legend: {
@@ -213,62 +249,6 @@ export default {
             return colors[index % colors.length];
         },
 
-        /*connectToMQTT() {
-            // Créer un client MQTT
-            this.mqttClient = mqtt.connect(this.brokerUrl);
-
-            // Gérer les événements MQTT
-            this.mqttClient.on('connect', () => {
-                console.log('Connecté au broker MQTT');
-                // S'abonner aux topics
-                this.subscribedTopics.forEach((topic) => {
-                    this.mqttClient.subscribe(topic, (err) => {
-                        if (err) {
-                            console.error(`Erreur d'abonnement au topic ${topic}`, err);
-                        } else {
-                            console.log(`Abonné au topic : ${topic}`);
-                        }
-                    });
-                });
-            });
-
-            this.mqttClient.on('message', (topic, message) => {
-                this.handleIncomingMessage(topic, message);
-            });
-
-            this.mqttClient.on('error', (error) => {
-                console.error('Erreur MQTT :', error);
-            });
-        },
-
-        handleIncomingMessage(topic, message) {
-            try {
-                const parsedMessage = JSON.parse(message.toString());
-                console.log(`Message reçu sur ${topic} :`, parsedMessage);
-
-                // Ajouter les données reçues au sensorData
-                const sensorName = topic.split('/').pop(); // Exemple : récupérer le nom du capteur depuis le topic
-                if (!this.sensorData[sensorName]) {
-                    this.$set(this.sensorData, sensorName, {});
-                }
-
-                const timestamp = new Date().toISOString();
-                this.$set(this.sensorData[sensorName], timestamp, parsedMessage.value);
-
-                // Mettre à jour les graphiques
-                this.renderCharts();
-            } catch (err) {
-                console.error('Erreur lors du traitement du message MQTT :', err);
-            }
-        },
-
-        disconnectFromMQTT() {
-            if (this.mqttClient) {
-                this.mqttClient.end();
-                console.log('Déconnecté du broker MQTT');
-            }
-        },*/
-
         goToLogin() {
             this.$router.push('/login'); // Redirige vers la page de connexion
         },
@@ -279,13 +259,8 @@ export default {
     },
     mounted() {
         this.fetchInitialData();
-       // this.connectToMQTT();
     },
 
-    /*beforeUnmount() {
-        // Déconnexion du broker MQTT avant de détruire le composant
-        this.disconnectFromMQTT();
-    }*/
 };
 </script>
 
@@ -372,6 +347,4 @@ export default {
     border-radius: 5px;
     border: 1px solid #ddd;
 }
-
-
 </style>

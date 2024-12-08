@@ -125,6 +125,7 @@ export default {
     goToAccueil() {
       this.$router.push({ path: '/accueil', query: { userId: this.userId } });
     }
+
   },
   created() {
     this.fetchSensors();
