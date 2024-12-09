@@ -1,22 +1,22 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: mqtt-api-rest
+  name: mqtt-websocketserver
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: mqtt-api-rest
+      app: mqtt-websocketserver
   template:
     metadata:
       labels:
-        app: mqtt-api-rest
+        app: mqtt-websocketserver
     spec:
       containers:
-        - name: api-rest
-          image: kiurow590/uqac-projet-infonuagique-api-rest:arm64
+        - name: websocketserver
+          image: kiurow590/uqac-projet-infonuagique-websocketserver:arm64
           ports:
-            - containerPort: 3000
+            - containerPort: 3333
           env:
             - name: DB_HOST
               value: "mysql"
@@ -36,13 +36,13 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: mqtt-api-rest-service
+  name: mqtt-websocketserver-service
 spec:
   selector:
-    app: mqtt-api-rest
+    app: mqtt-websocketserver
   ports:
     - protocol: TCP
-      port: 3000
-      targetPort: 3000
-      nodePort: 30003
+      port: 3333
+      targetPort: 3333
+      nodePort: 30004
   type: NodePort

@@ -1,6 +1,8 @@
 import mysql from 'mysql2/promise';
 import { logger } from '../logger.mjs';
+import dotenv from 'dotenv';
 
+dotenv.config();
 const connectToDatabase = async () => {
     try {
         const connection = await mysql.createConnection({

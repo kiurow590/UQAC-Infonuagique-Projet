@@ -14,7 +14,7 @@ COPY logger.mjs ./
 COPY app/ ./app/
 
 # Expose API port
-EXPOSE 3000
+EXPOSE 3333
 
 # Exécuter l'application
 CMD ["node", "server.js"]

@@ -1,6 +1,8 @@
 import mqtt from 'mqtt';
 import { logger } from '../logger.mjs';
+import dotenv from 'dotenv';
 
+dotenv.config();
 const setupMQTTClient = () => {
     const client = mqtt.connect(`mqtt://${process.env.MQTT_HOST || "192.168.2.133"}:${process.env.MQTT_PORT || "30083"}`, {
         username: process.env.MQTT_USER || 'mqttuser',
