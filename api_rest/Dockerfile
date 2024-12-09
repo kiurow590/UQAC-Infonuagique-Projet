@@ -9,9 +9,7 @@ COPY package*.json ./
 # Installer les dépendances
 RUN npm install
 
-COPY server.js ./
-COPY logger.mjs ./
-COPY app/ ./app/
+COPY . .
 
 # Expose API port
 EXPOSE 3000
