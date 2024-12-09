@@ -46,7 +46,7 @@ export default {
     async fetchSensors() {
       try {
         // Requête pour récupérer la liste des topics
-        const response = await fetch(`http://192.168.2.133:3000/topics`, {
+        const response = await fetch(`${this.api_url}/api/topics`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json'
@@ -69,7 +69,7 @@ export default {
     // Méthode pour envoyer la sélection au serveur
     async submitSelection() {
       try {
-        const response = await fetch(`http://192.168.2.133:3000/topics/subscribe`, {
+        const response = await fetch(`${this.api_url}/api/topics/subscribe`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -97,7 +97,7 @@ export default {
     async fetchCurrentSubscriptions() {
       try {
 
-        const response = await fetch(`http://192.168.2.133:3000/subscriptions/current?userId=${this.userId}`, {
+        const response = await fetch(`${this.api_url}/api/subscriptions/current?userId=${this.userId}`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json'

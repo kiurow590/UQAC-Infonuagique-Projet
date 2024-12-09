@@ -87,9 +87,11 @@ export default {
 
         async fetchInitialData() {
             // Communication avec le serveur pour obtenir les données initiales
+            console.log('Récupération des données initiales...');
+            console.log("ip to call : " + `${this.api_url}/api/topics/data?userId=${this.userId}`);
             try {
                 // const userId = this.userId; // L'ID de l'utilisateur, assurez-vous qu'il est récupéré via un token, une session, etc.
-                const response = await fetch(`http://192.168.2.133:3000/topics/data?userId=${this.userId}`, {
+                const response = await fetch(`${this.api_url}/api/topics/data?userId=${this.userId}`, {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json'

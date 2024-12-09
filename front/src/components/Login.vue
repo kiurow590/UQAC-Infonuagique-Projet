@@ -54,8 +54,8 @@ export default {
                 console.log('Connexion en cours...');
                 console.log(this.email);
                 console.log(this.password);
-                console.log("ip to call : " + `http://192.168.2.133:3000/users/login`);
-                const response = await fetch(`http://192.168.2.133:3000/users/login`, {
+                console.log("ip to call : " + `${this.api_url}/api/users/login`);
+                const response = await fetch(`${this.api_url}/api/users/login`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -87,10 +87,10 @@ export default {
 
                 console.log('Inscription en cours...');
                 console.log(this.emailSignup);
-                console.log("ip to call : " + `http://192.168.2.133:3000/users/signup`);
+                console.log("ip to call : " + `${this.api_url}/api/users/signup`);
                 // console.log(this.passwordSignup);
 
-                const response = await fetch(`http://192.168.2.133:3000/users/signup`, {
+                const response = await fetch(`${this.api_url}/api/users/signup`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
