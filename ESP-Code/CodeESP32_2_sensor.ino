@@ -2,12 +2,12 @@
 #include <PubSubClient.h>   // Bibliothèque pour le protocole MQTT
 
 // Configuration Wi-Fi
-const char* ssid = "544 MORIN";        // Nom du réseau Wi-Fi
-const char* password = "Logetudes";     // Mot de passe Wi-Fi
+const char* ssid = "SSID_WIFI";        // Nom du réseau Wi-Fi
+const char* password = "PASSWORD";     // Mot de passe Wi-Fi
 
 // Configuration MQTT
-const char* mqttServer = "raspberrypi.local";    // Adresse IP du serveur MQTT
-const int mqttPort = 30083;                   // Port du serveur MQTT (par défaut 1883)
+const char* mqttServer = "IP_Broker";    // Adresse IP du serveur MQTT
+const int mqttPort = 1883;                   // Port du serveur MQTT (par défaut 1883)
 //const char* mqttUser = "user";        // Nom d'utilisateur MQTT (si requis)
 //const char* mqttPassword = "password";     // Mot de passe MQTT (si requis)
 const char* topic1 = "capteurs/luminosity";      // Sujet pour publier les données
@@ -94,7 +94,7 @@ void loop() {
 
    // Création de la charge utile JSON
   char payload2[100];
-  snprintf(payload2, sizeof(payload2), "{\"humidite\": %d}", moistureValue);
+  snprintf(payload2, sizeof(payload2), "{\"value\": %d}", moistureValue);
 
   // Publication des données sur le sujet MQTT
   if (client.publish(topic2, payload2)) {
@@ -104,5 +104,5 @@ void loop() {
     Serial.println("Erreur lors de l'envoi des données.");
   }
 
-  delay(5000); // Attente de 5 secondes avant la prochaine lecture
+  delay(30000); // Attente de 5 secondes avant la prochaine lecture
 }
