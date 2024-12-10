@@ -19,10 +19,6 @@
                 <h2>Inscription</h2>
                 <form @submit.prevent="signup">
                     <div class="input-group">
-                        <label for="name">Nom :</label>
-                        <input type="text" v-model="name" id="name" required />
-                    </div>
-                    <div class="input-group">
                         <label for="emailSignup">Email :</label>
                         <input type="email" v-model="emailSignup" id="emailSignup" required />
                     </div>
@@ -44,51 +40,64 @@ export default {
         return {
             email: '',
             password: '',
-            name: '',
             emailSignup: '',
             passwordSignup: '',
-            loginError: "Mail ou mot de passe incorrect"
+            userId: '',
+            loginError: "Mail ou mot de passe incorrect",
+            api_url: 'http://192.168.2.133:3000'
         };
     },
     methods: {
         async login() {
-            /*try {
-                const response = await fetch('http://localhost:3000/users/login', {
+            try {
+
+                console.log('Connexion en cours...');
+                console.log(this.email);
+                console.log(this.password);
+                console.log("ip to call : " + `${this.api_url}/api/users/login`);
+                const response = await fetch(`${this.api_url}/api/users/login`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        user: this.email,
+                        email: this.email,
                         password: this.password
                     })
                 });
+                const data = await response.json();
 
                 if (!response.ok) {
-                    alert(`Erreur : ${this.loginError}`);
-                    throw new Error(this.loginError);
+                    alert(`Erreur : ${data.message || 'Une erreur est survenue'}`);
+                    throw new Error(data.message || 'Une erreur est survenue');
                 }
 
-                const data = await response.json();
-                console.log(data);
-                this.$router.push('/accueil'); // Redirection vers la page d'accueil
+                this.userId = data.userId;
+
+                console.log('Connexion réussie:', data);
+                this.$router.push({ path: '/accueil', query: { userId: this.userId } }); // Redirection vers la page d'accueil
             } catch (error) {
-                this.loginError = error.message;
-                console.error(this.loginError);
-            }*/
-            this.$router.push('/accueil'); // Redirection vers la page d'accueil
+                alert(`Erreur : ${error.message}`);
+                console.error('Erreur lors de la connexion:', error.message);
+            }
         },
+
         async signup() {
-            /*try {
-                const response = await fetch('http://localhost:3000/users/signup', {
+            try {
+
+                console.log('Inscription en cours...');
+                console.log(this.emailSignup);
+                console.log("ip to call : " + `${this.api_url}/api/users/signup`);
+                // console.log(this.passwordSignup);
+
+                const response = await fetch(`${this.api_url}/api/users/signup`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        user: this.emailSignup,
-                        password: this.passwordSignup,
-                        name: this.name
+                        email: this.emailSignup,
+                        password: this.passwordSignup
                     })
                 });
 
@@ -99,14 +108,16 @@ export default {
                     throw new Error(data);
                 }
 
+                this.userId = data.userId;
+
                 console.log(data);
-                this.$router.push('/abonnement'); // Redirection vers la page d'abonnement
+                this.$router.push({ path: '/abonnement', query: { userId: this.userId } }); // Redirection vers la page d'abonnement
             } catch (error) {
-                alert(`Erreur : mot de passe trop court`);
+                alert('Erreur : mot de passe trop court ou email invalide');
                 console.error(error.message);
-            }*/
-            this.$router.push('/abonnement'); // Redirection vers la page d'abonnement
+            }
         }
+
     }
 };
 </script>

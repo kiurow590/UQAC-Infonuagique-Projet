@@ -5,11 +5,15 @@
         <button @click="goToAbonnement" class="nav-btn">Page d'Abonnement</button>
     </div>
     <div class="home-container">
-
-
-        <!-- Bouton Refresh -->
-        <button @click="refreshData" class="refresh-btn">Refresh</button>
-
+        <!-- Sélecteur de plages temporelles -->
+        <div class="time-range-selector">
+            <label for="time-range">Afficher les données pour : </label>
+            <select id="time-range" v-model="selectedTimeRange" @change="updateCharts">
+                <option v-for="option in timeRangeOptions" :key="option.value" :value="option.value">
+                    {{ option.label }}
+                </option>
+            </select>
+        </div>
         <!-- Graphiques -->
         <div class="charts-container">
             <div v-for="(data, sensorName) in sensorData" :key="sensorName" class="chart-card">
@@ -28,102 +32,171 @@ export default {
     name: 'AccueilComponent',
     data() {
         return {
-            sensorData: {} // Map contenant les données des capteurs
+            userId: this.$route.query.userId,
+            sensorData: {}, // Map contenant les données des capteurs
+            api_url: 'http://192.168.2.133:3000',
+            selectedTimeRange: 'all', // Par défaut, "all" est sélectionné
+            timeRangeOptions: [
+                { label: '1 heure', value: '1h' },
+                { label: '6 heures', value: '6h' },
+                { label: '12 heures', value: '12h' },
+                { label: '1 jour', value: '1j' },
+                { label: '7 jours', value: '7j' },
+                { label: 'Tout', value: 'all' }
+            ],
+            chart: null,
+            chartInstances: {},
+
         };
     },
+    created() {
+        this.connectWebSocket();
+    },
     methods: {
-        async fetchInitialData() {
-            // Communication avec le serveur pour obtenir les données initiales
-            /*
-            try {
-              const response = await fetch('http://localhost:3000/sensors/data', {
-                method: 'GET',
-                headers: {
-                  'Content-Type': 'application/json'
-                }
-              });
-      
-              if (!response.ok) {
-                throw new Error("Erreur lors de la récupération des données des capteurs");
-              }
-      
-              const data = await response.json();
-              this.sensorData = data;
-              this.renderCharts();
-            } catch (error) {
-              console.error("Erreur : ", error.message);
-            }
-            */
 
-            // Valeurs simulées pour l'instant
-            const sensorData = {
-                sensor1: {
-                    "2024-11-18": 10,
-                    "2024-11-19": 15,
-                    "2024-11-20": 20
-                },
-                sensor2: {
-                    "2024-11-18": 5,
-                    "2024-11-19": 10,
-                    "2024-11-20": 12
-                },
-                sensor3: {
-                    "2024-11-18": 25,
-                    "2024-11-19": 14,
-                    "2024-11-20": 31.5
-                }
+        connectWebSocket() {
+            const socket = new WebSocket('http://192.168.2.133:3333'); // Remplacez par l'adresse de votre serveur WebSocket
+
+        
+            socket.onopen = () => {
+                console.log('WebSocket connection established');
+                socket.send(JSON.stringify({ userId: this.userId }));
             };
 
-            // Assigner les données des capteurs
-            this.sensorData = sensorData;
+            socket.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                var date = data.date;
+                var message = data.message;
+                for(var i = 0; i < this.subscriptionsData.length; i++){
+                    if(this.subscriptionsData[i].topicName == data.topic){
+                        this.subscriptionsData[i].messages.push({topic_id: i+1, timestamp: date, message: message});
+                    }
+                }
+                this.processSensorData();
+                this.updateCharts();
+            };
+
+            socket.onclose = () => {
+                console.log('WebSocket connection closed');
+            };
+
+            socket.onerror = (error) => {
+                console.error('WebSocket error:', error);
+            };
+        },
+
+        async fetchInitialData() {
+            // Communication avec le serveur pour obtenir les données initiales
+            console.log('Récupération des données initiales...');
+            console.log("ip to call : " + `${this.api_url}/api/topics/data?userId=${this.userId}`);
+            try {
+                // const userId = this.userId; // L'ID de l'utilisateur, assurez-vous qu'il est récupéré via un token, une session, etc.
+                const response = await fetch(`${this.api_url}/api/topics/data?userId=${this.userId}`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error("Erreur lors de la récupération des données des abonnements");
+                }
+
+                const data = await response.json();
+                this.subscriptionsData = data;  // Données des abonnements et messages
+                this.processSensorData(); // Traiter les données initiales
+                this.renderCharts();  // Méthode pour afficher les graphiques, si nécessaire
+            } catch (error) {
+                console.error("Erreur : ", error.message);
+                //alert(`Erreur : ${error.message}`);
+            }
 
             // Appeler `nextTick` pour attendre que le DOM soit mis à jour
             await nextTick();
 
             // Appeler la fonction pour afficher les graphiques après que le DOM soit prêt
-            this.renderCharts();
+            this.updateCharts();
         },
-        async refreshData() {
-            // Communication avec le serveur pour mettre à jour les données
-            /*
-            try {
-              const response = await fetch('http://localhost:3000/sensors/refresh', {
-                method: 'GET',
-                headers: {
-                  'Content-Type': 'application/json'
-                }
-              });
-      
-              if (!response.ok) {
-                throw new Error("Erreur lors de la mise à jour des données des capteurs");
-              }
-      
-              const updatedData = await response.json();
-              this.sensorData = updatedData;
-              this.renderCharts();
-            } catch (error) {
-              console.error("Erreur : ", error.message);
-            }
-            */
 
-            this.renderCharts();
+        processSensorData() {
+            const data = this.subscriptionsData;
+
+            if (!data) return;
+
+            for (let i = 0; i < data.length; i++) {
+                const sensorName = data[i].topicName;
+                const sensorValues = {};
+
+                for (let j = 0; j < data[i].messages.length; j++) {
+                    const value = JSON.parse(data[i].messages[j].message).value;
+                    const date = new Date(data[i].messages[j].timestamp);
+                    date.setHours(date.getHours() - 5);
+                    sensorValues[date] = value;
+                }
+
+                this.sensorData[sensorName] = sensorValues;
+            }
+
+            // Initialiser les données filtrées à toutes les données
+            this.filteredData = JSON.parse(JSON.stringify(this.sensorData));
         },
-        renderCharts() {
-            // Supprimer tous les graphiques existants avant de les recréer
-            const chartIds = Object.keys(this.sensorData); // Récupère les noms des capteurs
+
+        updateCharts() {
+            // Filtrer les données selon la plage temporelle sélectionnée
+            this.filterDataByTimeRange();
+
+            // Supprimer et recréer les graphiques
+            const chartIds = Object.keys(this.filteredData);
             chartIds.forEach(sensorName => {
                 const chartElement = document.getElementById(`chart-${sensorName}`);
-                const chartInstance = Chart.getChart(chartElement); // Récupère l'instance du graphique
+                const chartInstance = Chart.getChart(chartElement);
+
                 if (chartInstance) {
-                    chartInstance.destroy(); // Détruit l'instance du graphique
+                    chartInstance.destroy();
                 }
             });
 
-            // Créer un graphique pour chaque capteur
-            Object.entries(this.sensorData).forEach(([sensorName, data], index) => {
-                const ctx = document.getElementById(`chart-${sensorName}`).getContext('2d');
-                const labels = Object.keys(data); // Dates
+            this.renderCharts();
+        },
+
+        filterDataByTimeRange() {
+            const now = new Date();
+            const ranges = {
+                '1h': 1 * 60 * 60 * 1000,
+                '6h': 6 * 60 * 60 * 1000,
+                '12h': 12 * 60 * 60 * 1000,
+                '1j': 24 * 60 * 60 * 1000,
+                '7j': 7 * 24 * 60 * 60 * 1000,
+                'all': Infinity
+            };
+
+            const timeLimit = ranges[this.selectedTimeRange];
+
+            this.filteredData = {};
+            Object.entries(this.sensorData).forEach(([sensorName, data]) => {
+                const filteredSensorData = {};
+
+                Object.entries(data).forEach(([timestamp, value]) => {
+                    const date = new Date(timestamp);
+                    if (now - date <= timeLimit) {
+                        filteredSensorData[timestamp] = value;
+                    }
+                });
+
+                this.filteredData[sensorName] = filteredSensorData;
+            });
+        },
+
+        renderCharts() {
+            Object.entries(this.filteredData).forEach(([sensorName, data], index) => {
+                const ctx = document.getElementById(`chart-${sensorName}`);
                 const values = Object.values(data); // Mesures
+                const rawDates = Object.keys(data); // Dates
+
+                const labels = rawDates.map(date => {
+                    const parsedDate = new Date(date);
+                    return `${parsedDate.getDate().toString().padStart(2, '0')}/${(parsedDate.getMonth() + 1).toString().padStart(2, '0')}/${parsedDate.getFullYear().toString().slice(-2)} - ${parsedDate.toLocaleTimeString('fr-FR', { hour12: false })}`;
+                });
 
                 new Chart(ctx, {
                     type: 'line',
@@ -140,10 +213,25 @@ export default {
                         ]
                     },
                     options: {
+                        animation: false,
                         responsive: true,
                         plugins: {
                             legend: {
                                 display: false
+                            }
+                        },
+                        scales: {
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Dates'
+                                }
+                            },
+                            y: {
+                                title: {
+                                    display: true,
+                                    text: 'Mesures'
+                                }
                             }
                         }
                     }
@@ -162,16 +250,19 @@ export default {
             ];
             return colors[index % colors.length];
         },
+
         goToLogin() {
             this.$router.push('/login'); // Redirige vers la page de connexion
         },
+
         goToAbonnement() {
-            this.$router.push('/abonnement'); // Redirige vers la page d'abonnement
+            this.$router.push({ path: '/abonnement', query: { userId: this.userId } }); // Redirige vers la page d'abonnement
         }
     },
     mounted() {
         this.fetchInitialData();
-    }
+    },
+
 };
 </script>
 
@@ -241,5 +332,21 @@ export default {
     font-weight: bold;
     color: #333;
     margin: 0;
+}
+
+.time-range-selector {
+    margin: 20px 0;
+    text-align: center;
+}
+
+.time-range-selector label {
+    font-weight: bold;
+    margin-right: 10px;
+}
+
+.time-range-selector select {
+    padding: 5px 10px;
+    border-radius: 5px;
+    border: 1px solid #ddd;
 }
 </style>

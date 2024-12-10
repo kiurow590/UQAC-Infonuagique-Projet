@@ -6,7 +6,7 @@ import AccueilComponent from './components/Accueil.vue';
 const routes = [
     {
         path: '/',
-        redirect: '/login'
+        component: LoginComponent
     },
     { 
         path: '/login', 

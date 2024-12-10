@@ -5,11 +5,16 @@ WORKDIR /app
 
 # Copier les fichiers nécessaires
 COPY package*.json ./
-COPY app.js ./
-COPY logger.mjs ./
 
 # Installer les dépendances
 RUN npm install
 
+COPY server.js ./
+COPY logger.mjs ./
+COPY app/ ./app/
+
+# Expose API port
+EXPOSE 3333
+
 # Exécuter l'application
-CMD ["node", "app.js"]
+CMD ["node", "server.js"]

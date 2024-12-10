@@ -2,15 +2,16 @@
 #include <PubSubClient.h>   // Bibliothèque pour le protocole MQTT
 
 // Configuration Wi-Fi
-const char* ssid = "544 MORIN";        // Nom du réseau Wi-Fi
-const char* password = "Logetudes";     // Mot de passe Wi-Fi
+const char* ssid = "SSID_WIFI";        // Nom du réseau Wi-Fi
+const char* password = "PASSWORD";     // Mot de passe Wi-Fi
 
 // Configuration MQTT
-const char* mqttServer = "192.168.2.102";    // Adresse IP du serveur MQTT
+const char* mqttServer = "IP_Broker";    // Adresse IP du serveur MQTT
 const int mqttPort = 1883;                   // Port du serveur MQTT (par défaut 1883)
-const char* mqttUser = "user";        // Nom d'utilisateur MQTT (si requis)
-const char* mqttPassword = "password";     // Mot de passe MQTT (si requis)
-const char* topic = "capteurs/donnees";      // Sujet pour publier les données
+//const char* mqttUser = "user";        // Nom d'utilisateur MQTT (si requis)
+//const char* mqttPassword = "password";     // Mot de passe MQTT (si requis)
+const char* topic1 = "capteurs/luminosity";      // Sujet pour publier les données
+const char* topic2 = "capteurs/humidity";      // Sujet pour publier les données
 
 WiFiClient espClient;        // Création d'une instance de client Wi-Fi
 PubSubClient client(espClient); // Initialisation de MQTT avec le client Wi-Fi
@@ -40,7 +41,7 @@ void connectMQTT() {
   while (!client.connected()) {
     Serial.println("Connexion au serveur MQTT...");
 
-    if (client.connect("ESP32Client", mqttUser, mqttPassword)) {
+    if (client.connect("ESP32Client"/*, mqttUser, mqttPassword*/)) {
       Serial.println("Connecté au serveur MQTT !");
     } else {
       Serial.print("Échec de la connexion, rc=");
@@ -81,15 +82,27 @@ void loop() {
 
   // Création de la charge utile JSON
   char payload[100];
-  snprintf(payload, sizeof(payload), "{\"luminosite\": %d, \"humidite\": %d}", lightValue, moistureValue);
+  snprintf(payload, sizeof(payload), "{\"value\": %d}", lightValue);
 
   // Publication des données sur le sujet MQTT
-  if (client.publish(topic, payload)) {
+  if (client.publish(topic1, payload)) {
     Serial.println("Données envoyées avec succès !");
     Serial.println(payload);
   } else {
     Serial.println("Erreur lors de l'envoi des données.");
   }
 
-  delay(5000); // Attente de 5 secondes avant la prochaine lecture
+   // Création de la charge utile JSON
+  char payload2[100];
+  snprintf(payload2, sizeof(payload2), "{\"value\": %d}", moistureValue);
+
+  // Publication des données sur le sujet MQTT
+  if (client.publish(topic2, payload2)) {
+    Serial.println("Données envoyées avec succès !");
+    Serial.println(payload2);
+  } else {
+    Serial.println("Erreur lors de l'envoi des données.");
+  }
+
+  delay(30000); // Attente de 5 secondes avant la prochaine lecture
 }

@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mqtt-front
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mqtt-front
+  template:
+    metadata:
+      labels:
+        app: mqtt-front
+    spec:
+      containers:
+        - name: mqtt-front
+          image: kiurow590/uqac-projet-infonuagique-front:arm64
+          ports:
+            - containerPort: 80
+          env:
+            - name: VUE_APP_API_URL
+              value: "http://192.168.49.2:30002"
+            - name: VUE_APP_BROKER_IP
+              value: "192.168.49.2"
+            - name: VUE_APP_BROKER_PORT
+              value: "30083"
+            - name: VUE_APP_DB_HOST
+              value: "192.168.49.2"
+            - name: VUE_APP_DB_PORT
+              value: "30036"
+            - name: VUE_APP_DB_USER
+              value: "mqttuser"
+            - name: VUE_APP_DB_PASSWORD
+              value: "mqttpass"
+            - name: VUE_APP_DB_NAME
+              value: "mqtt_db"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mqtt-front-service
+spec:
+  selector:
+    app: mqtt-front
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+      nodePort: 30000
+  type: NodePort

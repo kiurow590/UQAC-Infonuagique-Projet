@@ -1,25 +1,23 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: mqtt-listener
+  name: mqtt-websocketserver
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: mqtt-listener
+      app: mqtt-websocketserver
   template:
     metadata:
       labels:
-        app: mqtt-listener
+        app: mqtt-websocketserver
     spec:
       containers:
-        - name: mqtt-listener
-          image: kiurow590/uqac-projet-infonuagique-event-listener-mqtt:arm64
+        - name: websocketserver
+          image: kiurow590/uqac-projet-infonuagique-websocketserver:arm64
+          ports:
+            - containerPort: 3333
           env:
-            - name: BROKER_IP
-              value: "mosquitto"
-            - name: BROKER_PORT
-              value: "1883"
             - name: DB_HOST
               value: "mysql"
             - name: DB_PORT
@@ -30,16 +28,21 @@ spec:
               value: "mqttpass"
             - name: DB_NAME
               value: "mqtt_db"
+            - name: MQTT_HOST
+              value: "mosquitto"
+            - name: MQTT_PORT
+              value: "1883"
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: mqtt-listener-service
+  name: mqtt-websocketserver-service
 spec:
   selector:
-    app: mqtt-listener
+    app: mqtt-websocketserver
   ports:
     - protocol: TCP
-      port: 1883
-      targetPort: 1883
-  type: ClusterIP
+      port: 3333
+      targetPort: 3333
+      nodePort: 30004
+  type: NodePort

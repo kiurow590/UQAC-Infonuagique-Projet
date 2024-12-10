@@ -8,8 +8,8 @@
 
   <!-- Liste des capteurs sous forme de boutons carrés -->
   <div class="sensor-list">
-    <div v-for="sensor in sensors" :key="sensor.id" class="sensor-item"
-      :class="{ selected: selectedSensors.includes(sensor.id) }" @click="toggleSensor(sensor.id)">
+    <div v-for="sensor in topics" :key="sensor.id" class="sensor-item"
+      :class="{ selected: selectedTopics.includes(sensor.id) }" @click="toggleSensor(sensor.id)">
       {{ sensor.name }}
     </div>
   </div>
@@ -25,74 +25,95 @@ export default {
   name: "AbonnementComponent",
   data() {
     return {
-      sensors: [], // Liste des capteurs reçus depuis le serveur
-      selectedSensors: [] // Liste des capteurs sélectionnés par l'utilisateur
+      userId: this.$route.query.userId,
+      topics: [], // Liste des capteurs reçus depuis le serveur
+      selectedTopics: [], // Liste des capteurs sélectionnés par l'utilisateur
+      api_url: 'http://192.168.2.133:3000'
     };
   },
   methods: {
 
     // Méthode pour (dé)sélectionner un capteur
     toggleSensor(sensorId) {
-      const index = this.selectedSensors.indexOf(sensorId);
+      const index = this.selectedTopics.indexOf(sensorId);
       if (index === -1) {
-        this.selectedSensors.push(sensorId); // Ajouter si non sélectionné
+        this.selectedTopics.push(sensorId); // Ajouter si non sélectionné
       } else {
-        this.selectedSensors.splice(index, 1); // Retirer si déjà sélectionné
+        this.selectedTopics.splice(index, 1); // Retirer si déjà sélectionné
       }
     },
     // Méthode pour récupérer la liste des capteurs depuis le serveur
     async fetchSensors() {
-      /*try {
-        // Exemple de requête au serveur pour récupérer la liste des capteurs
-        const response = await fetch('http://localhost:3000/sensors', {
+      try {
+        // Requête pour récupérer la liste des topics
+        const response = await fetch(`${this.api_url}/api/topics`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json'
           }
         });
- 
+
         if (!response.ok) {
-          throw new Error("Erreur lors de la récupération des capteurs");
+          throw new Error("Erreur lors de la récupération des topics");
         }
- 
-        // Stocker les capteurs dans `sensors`
+
+        // Stocker les topics dans `this.topics`
         const data = await response.json();
-        this.sensors = data.sensors;
+        this.topics = data.topics;
       } catch (error) {
         console.error("Erreur : ", error.message);
-      }*/
-      this.sensors = [
-        { id: 1, name: "Capteur de température" },
-        { id: 2, name: "Capteur d'humidité" },
-        { id: 3, name: "Capteur de luminosité" },
-        { id: 4, name: "Capteur de mouvement" }
-      ];
+      }
+
     },
 
     // Méthode pour envoyer la sélection au serveur
     async submitSelection() {
-      /*try {
-        // Exemple de requête pour envoyer la sélection
-        const response = await fetch('http://localhost:3000/sensors/subscribe', {
+      try {
+        const response = await fetch(`${this.api_url}/api/topics/subscribe`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            selectedSensors: this.selectedSensors
+            selectedTopics: this.selectedTopics,
+            userId: this.userId
           })
         });
- 
+
         if (!response.ok) {
-          throw new Error("Erreur lors de l'envoi de la sélection");
+          const error = await response.json();
+          throw new Error(error.message || "Erreur lors de l'envoi de la sélection");
         }
- 
-        // Rediriger l'utilisateur vers la page d'accueil après validation
-        this.$router.push({ path: "/accueil" });
+
+        // Affiche un message de succès ou redirige l'utilisateur
+        console.log("Abonnement réussi !");
+        this.$router.push({ path: "/accueil", query: { userId: this.userId } }); // Rediriger vers la page d'accueil
       } catch (error) {
         console.error("Erreur : ", error.message);
-      }*/
-      this.$router.push({ path: "/accueil" });
+        alert(`Erreur : ${error.message}`);
+      }
+    },
+
+    async fetchCurrentSubscriptions() {
+      try {
+
+        const response = await fetch(`${this.api_url}/api/subscriptions/current?userId=${this.userId}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error("Erreur lors de la récupération des abonnements actuels");
+        }
+
+        const data = await response.json();
+        this.selectedTopics = data.map(subscription => subscription.topic_id);
+      } catch (error) {
+        console.error("Erreur : ", error.message);
+        alert(`Erreur : ${error.message}`);
+      }
     },
 
     // Méthode pour aller à la page de connexion
@@ -102,12 +123,14 @@ export default {
 
     // Méthode pour aller à la page d'accueil
     goToAccueil() {
-      this.$router.push({ path: "/accueil" });
+      this.$router.push({ path: '/accueil', query: { userId: this.userId } });
     }
+
   },
   created() {
-    // Appel à `fetchSensors` lors du montage du composant
     this.fetchSensors();
+    this.fetchCurrentSubscriptions();
+
   }
 };
 </script>
