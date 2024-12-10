@@ -116,6 +116,9 @@ const connectToMQTT = (connection) => {
     };
 };
 
+/**
+ * Fonction principale pour démarrer l'application.
+ */
 const start = async () => {
     const connection = await connectToDatabase();
     connectToMQTT(connection);

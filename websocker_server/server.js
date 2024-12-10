@@ -9,9 +9,12 @@ dotenv.config();
 
 const port = process.env.PORT || 3333;
 
+/**
+ * Starts the WebSocket server.
+ */
 const startWebSocketServer = async () => {
-    const db = await connectToDatabase();
-    const mqttClient = setupMQTTClient();
+    const db = await connectToDatabase(); // Connect to the database
+    const mqttClient = setupMQTTClient(); // Setup the MQTT client
     const server = createServer();
 
     setupWebSocket(server, mqttClient, db);

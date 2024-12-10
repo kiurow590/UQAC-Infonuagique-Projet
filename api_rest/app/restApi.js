@@ -6,6 +6,10 @@ import { logger } from '../logger.mjs';
 const router = express.Router();
 
 export default (db) => {
+
+    /**
+     * ROUTES DE L'API POUR L'INSCRIPTION ET LA CONNEXION DES UTILISATEURS
+     */
     router.post('/users/signup', async (req, res) => {
         const { email, password } = req.body;
 
@@ -24,6 +28,9 @@ export default (db) => {
         }
     });
 
+    /**
+     * Route de connexion des utilisateurs
+     */
     router.post('/users/login', async (req, res) => {
         const { email, password } = req.body;
 
@@ -45,8 +52,8 @@ export default (db) => {
     });
 
     /**
- * ROUTES DE L'API POUR LES TOPICS
- */
+    * ROUTES DE L'API POUR GET LES TOPICS
+    */
     router.get('/topics', async (req, res) => {
         try {
             const [rows] = await db.query('SELECT id, name FROM topics');
@@ -65,7 +72,9 @@ export default (db) => {
         }
     });
 
-
+    /**
+     * ROUTES DE L'API POUR LES ABONNEMENTS
+     */
     router.get('/subscriptions/current', async (req, res) => {
         const userId = req.query.userId;
 
@@ -86,7 +95,9 @@ export default (db) => {
         }
     });
 
-
+    /**
+     * ROUTES DE L'API POUR LES MESSAGES
+     */
     router.post('/topics/subscribe', async (req, res) => {
         const { selectedTopics, userId } = req.body;
 
@@ -113,13 +124,18 @@ export default (db) => {
         }
     });
 
+    /**
+     * ROUTES DE L'API POUR L'HISTORIQUE MESSAGES
+     */
     router.get('/topics/data', async (req, res) => {
         const userId = req.query.userId;
 
         if (!userId) {
             return res.status(400).json({ message: 'Utilisateur non authentifié' });
         }
-
+        /**
+         * On récupère les abonnements de l'utilisateur
+         */
         try {
             const [subscriptions] = await db.query(
                 'SELECT s.topic_id, t.name AS topic_name FROM subscriptions s JOIN topics t ON s.topic_id = t.id WHERE s.user_id = ?',

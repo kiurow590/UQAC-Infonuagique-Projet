@@ -7,16 +7,20 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+// CONSTANTS
 const app = express();
 app.use(cors());
 app.use(express.json());
-
 const port = process.env.PORT || 3000;
 
-const startServer = async () => {
-    const db = await connectToDatabase();
-    app.use('/api', createRestApi(db));
 
+/**
+ * Start the server
+ */
+const startServer = async () => {
+    const db = await connectToDatabase(); // Connect to the database
+    app.use('/api', createRestApi(db)); // Create the REST API
+    
     app.listen(port, () => {
         logger.info(`REST API running on port ${port}`);
     });

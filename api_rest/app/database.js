@@ -3,9 +3,14 @@ import { logger } from '../logger.mjs';
 import dotenv from 'dotenv';
 
 dotenv.config();
+
+/**
+ * Connects to the MySQL database.
+ * @returns {Promise<mysql.Connection>}
+ */
 const connectToDatabase = async () => {
     try {
-        const connection = await mysql.createConnection({
+        const connection = await mysql.createConnection({ // Create a connection to the database
             host: process.env.DB_HOST || '192.168.2.133',
             port: process.env.DB_PORT || 30036,
             user: process.env.DB_USER || 'mqttuser',
