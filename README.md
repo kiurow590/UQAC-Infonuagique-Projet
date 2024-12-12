@@ -10,6 +10,72 @@ Ce projet a été réalisé dans le cadre du cours d'infonuagique à l'UQAC. Il 
 
 ## Structure du projet
 
+```
+.
+├── api_rest
+│  ├── app
+│  │  ├── database.js
+│  │  ├── mqttClient.js
+│  │  └── restApi.js
+│  ├── Dockerfile
+│  ├── logger.mjs
+│  ├── package.json
+│  ├── package-lock.json
+│  └── server.js
+├── ESP-Code
+│  ├── CodeESP32_1_sensor.ino
+│  └── CodeESP32_2_sensor.ino
+├── front
+│  ├── babel.config.js
+│  ├── Dockerfile
+│  ├── jsconfig.json
+│  ├── nginx.conf
+│  ├── package.json
+│  ├── package-lock.json
+│  ├── public
+│  │  ├── favicon.ico
+│  │  └── index.html
+│  ├── README.md
+│  ├── src
+│  │  ├── App.vue
+│  │  ├── assets
+│  │  │  └── logo.png
+│  │  ├── components
+│  │  │  ├── Abonnement.vue
+│  │  │  ├── Accueil.vue
+│  │  │  └── Login.vue
+│  │  ├── main.js
+│  │  └── router.js
+│  └── vue.config.js
+├── k8s
+│  ├── api-rest-deployment.yaml
+│  ├── front-deployment.yaml
+│  ├── mosquitto-config.yaml
+│  ├── mosquitto-deployment.yaml
+│  ├── mosquitto-service.yaml
+│  ├── mqtt-subscriber-deployment.yaml
+│  ├── mysql-deployment.yaml
+│  └── websocketserver-deployment.yaml
+├── mqtt-subscriber
+│  ├── app.js
+│  ├── Dockerfile
+│  ├── logger.mjs
+│  ├── package.json
+│  └── package-lock.json
+├── README.md
+└── websocker_server
+    ├── app
+    │  ├── database.js
+    │  ├── mqttClient.js
+    │  └── websocket.js
+    ├── Dockerfile
+    ├── logger.mjs
+    ├── package.json
+    └── server.js
+```
+
+
+
 ### Code Arduino
 Le dossier `ESP-Code/` contient le code pour les capteurs ESP32 :
 - `CodeESP32_1_sensor.ino`
