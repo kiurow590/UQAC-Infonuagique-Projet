@@ -109,11 +109,6 @@ Le dossier `k8s/` contient les fichiers de configuration Kubernetes pour déploy
 - `api-rest-deployment.yaml` : déploiement et service pour l'API REST.
 - `front-deployment.yaml` : déploiement et service pour l'application frontend.
 
-## Installation et exécution
-
-
-
-## issues
 
 ## Licence
 Ce projet est sous licence MIT. Voir le fichier `LICENSE` pour plus de détails.
